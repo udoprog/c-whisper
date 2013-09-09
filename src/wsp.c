@@ -156,10 +156,17 @@ wsp_return_t wsp_fetch_time_points(
         return WSP_ERROR;
     }
 
-    int from = wsp_time_floor(time_from, archive->spp) / archive->spp;
+    uint32_t from = wsp_time_floor(time_from, archive->spp) / archive->spp;
+    uint32_t until = wsp_time_floor(time_until, archive->spp) / archive->spp;
     int offset = from - (base.timestamp / archive->spp);
-    int until = wsp_time_floor(time_until, archive->spp) / archive->spp;
-    uint32_t count = until - from;
+
+    uint32_t count = until - from + 1;
+
+    if (DEBUG) {
+        DEBUG_PRINTF(
+            "wsp_fetch_time_points: offset=%d, count=%u\n", offset, count
+        );
+    }
 
     if (count > archive->count) {
         count = archive->count;
@@ -190,15 +197,7 @@ wsp_return_t wsp_fetch_points(
         return WSP_ERROR;
     }
 
-    if (offset < -((int)archive->count)) {
-        offset = -((int)archive->count);
-    }
-
-    if (offset > archive->count) {
-        offset = archive->count;
-    }
-
-    if (count > archive->count) {
+    if (count >= archive->count) {
         count = archive->count;
     }
 
@@ -207,31 +206,11 @@ wsp_return_t wsp_fetch_points(
 
     wsp_point_t points[count];
 
-    // wrap around
-    if (until < from) {
-        uint32_t a_from = from;
-        uint32_t a_size = archive->count - from;
-        wsp_point_t *a_points = points;
-
-        uint32_t b_from = 0;
-        uint32_t b_size = until;
-        wsp_point_t *b_points = points + a_size;
-
-        if (wsp_load_points(w, archive, a_from, a_size, a_points, e) == WSP_ERROR) {
-            return WSP_ERROR;
-        }
-
-        if (wsp_load_points(w, archive, b_from, b_size, b_points, e) == WSP_ERROR) {
-            return WSP_ERROR;
-        }
-    }
-    else {
-        if (wsp_load_points(w, archive, from, count, points, e) == WSP_ERROR) {
-            return WSP_ERROR;
-        }
+    if (__wsp_fetch_read_points(w, archive, from, until, count, points, e) == WSP_ERROR) {
+        return WSP_ERROR;
     }
 
-    if (__wsp_filter_points(&base, archive->spp, offset, count, points, result, e) == WSP_ERROR) {
+    if (__wsp_filter_points(&base, archive, offset, count, points, result, e) == WSP_ERROR) {
         return WSP_ERROR;
     }
 

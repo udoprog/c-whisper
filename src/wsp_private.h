@@ -81,11 +81,21 @@ wsp_return_t __wsp_load_point(
  */
 wsp_return_t __wsp_filter_points(
     wsp_point_t *base,
-    uint32_t spp,
+    wsp_archive_t *archive,
     int offset,
     uint32_t count,
     wsp_point_t *points,
     wsp_point_t *result,
+    wsp_error_t *e
+);
+
+wsp_return_t __wsp_fetch_read_points(
+    wsp_t *w,
+    wsp_archive_t *archive,
+    uint32_t from,
+    uint32_t until,
+    uint32_t count,
+    wsp_point_t *points,
     wsp_error_t *e
 );
 
