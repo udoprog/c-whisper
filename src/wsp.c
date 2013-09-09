@@ -49,10 +49,13 @@ const char *wsp_error_strings[WSP_ERROR_SIZE] = {
     "Invalid time interval"
 }; // static initialization }}}
 
-const char *wsp_strerror(wsp_error_t *e)
+// wsp_strerror {{{
+const char *wsp_strerror(
+    wsp_error_t *e
+)
 {
     return wsp_error_strings[e->type];
-}
+} // wsp_strerror }}}
 
 // wsp_open {{{
 wsp_return_t wsp_open(
@@ -153,7 +156,7 @@ wsp_return_t wsp_fetch_time_points(
         return WSP_ERROR;
     }
 
-    if (!(time_from < time_until)) {
+    if (!(time_from <= time_until)) {
         e->type = WSP_ERROR_TIME_INTERVAL;
         return WSP_ERROR;
     }
@@ -247,6 +250,7 @@ wsp_return_t wsp_load_points(
     return WSP_OK;
 } // wsp_load_points }}}
 
+// wsp_point_index {{{
 inline static uint32_t wsp_point_index(
     wsp_archive_t *archive,
     wsp_point_t *base,
@@ -255,8 +259,9 @@ inline static uint32_t wsp_point_index(
 {
     wsp_time_t distance = floored - base->timestamp;
     return (distance / archive->spp) % archive->count;
-}
+} // wsp_point_index }}}
 
+// wsp_update_point {{{
 wsp_return_t wsp_update_point(
     wsp_t *w,
     wsp_archive_t *archive,
@@ -291,8 +296,9 @@ wsp_return_t wsp_update_point(
     *base = base_point;
 
     return WSP_OK;
-}
+} // wsp_update_point }}}
 
+// wsp_update {{{
 wsp_return_t wsp_update(wsp_t *w, wsp_point_t *p, wsp_error_t *e)
 {
     wsp_time_t now = wsp_time_now();
@@ -362,4 +368,4 @@ wsp_return_t wsp_update(wsp_t *w, wsp_point_t *p, wsp_error_t *e)
     }
 
     return WSP_OK;
-} // wsp_update
+} // wsp_update }}}

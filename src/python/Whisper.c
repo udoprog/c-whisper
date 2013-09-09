@@ -132,7 +132,7 @@ static PyObject* Whisper_load_points(C *self, PyObject *args) {
     wsp_archive_t *archive = &self->base->archives[py_archive->index];
     wsp_point_t points[archive->count];
 
-    if (wsp_load_all_points(self->base, archive, points, &e) == WSP_ERROR) {
+    if (wsp_load_points(self->base, archive, 0, archive->count, points, &e) == WSP_ERROR) {
         PyErr_Whisper(&e);
         Py_DECREF(result);
         return NULL;
