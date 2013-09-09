@@ -9,14 +9,18 @@ PREFIX:=/usr/local
 
 WITH_PYTHON:="yes"
 
+CHECK_LIBS=$(shell pkg-config --libs check)
+
 TESTS+=tests/test_wsp_io_file.1.test
 
 CFLAGS=-g -pedantic -Wall -O3 -std=c99 -fPIC -D_POSIX_C_SOURCE
 
-all: bin bin/whisper-dump python
-
-bin:
-	mkdir $@
+all: bin/whisper-dump
+	@if [[ $(WITH_PYTHON) != "yes" ]]; then\
+		echo "Not building python bindings";\
+    else\
+	    make python-bindings;\
+    fi
 
 clean:
 	$(RM) $(OBJECTS)
@@ -25,21 +29,12 @@ clean:
 	$(RM) -R build
 
 %.test: %.o
-	$(CC) $< $(shell pkg-config --libs check) -o $@
+	$(CC) $< $(CHECK_LIBS) -o $@
 
 .PHONY: tests
 
 tests: $(TESTS)
 	@for test in $(TESTS); do echo "TEST: $$test"; $$test; done
-
-.PHONY: python
-
-python:
-	@if [[ $(WITH_PYTHON) != "yes" ]]; then\
-		echo "Not building python bindings";\
-    else\
-	    make python-bindings;\
-    fi
 
 .PHONY: python-bindings
 
@@ -49,5 +44,8 @@ python-bindings:
 $(ARCHIVE): $(OBJECTS)
 	$(AR) cr $@ $(OBJECTS)
 
-bin/whisper-dump: src/whisper-dump.o $(ARCHIVE)
+bin:
+	mkdir $@
+
+bin/whisper-dump: bin src/whisper-dump.o $(ARCHIVE)
 	$(CC) $(CFLAGS) -o $@ src/whisper-dump.o $(ARCHIVE)
