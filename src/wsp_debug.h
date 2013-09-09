@@ -7,12 +7,18 @@
 #    define DEBUG (0)
 #endif
 
-#define TO_BOOL(expr) \
+#define to_bool(expr) \
     ((expr) ? "true" : "false")
 
 #define DEBUG_PRINTF(...) \
-    do { \
-        fprintf(stdout, __VA_ARGS__); \
-    } while (0);
+    debug_printf(__FILE__, __LINE__, __func__, __VA_ARGS__)
 
-#endif /* _WSP_DEBUG_H */
+void debug_printf(
+    const char *file,
+    int line,
+    const char *function,
+    const char *format,
+    ...
+);
+
+#endif /* _WSP_DEBUG_H_ */

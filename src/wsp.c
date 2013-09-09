@@ -172,7 +172,7 @@ wsp_return_t wsp_fetch_time_points(
 
     if (DEBUG) {
         DEBUG_PRINTF(
-            "wsp_fetch_time_points: offset=%d, count=%u\n", offset, count
+            "wsp_fetch_time_points: offset=%d, count=%u", offset, count
         );
     }
 
@@ -235,6 +235,10 @@ wsp_return_t wsp_load_points(
     wsp_error_t *e
 )
 {
+    if (DEBUG) {
+        DEBUG_PRINTF("offset=%u, size=%u", offset, size);
+    }
+
     size_t read_offset = archive->offset + sizeof(wsp_point_b) * offset;
     size_t read_size = sizeof(wsp_point_b) * size;
 

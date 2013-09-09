@@ -638,8 +638,8 @@ wsp_return_t __wsp_filter_points(
 
         if (DEBUG) {
             DEBUG_PRINTF(
-                "wsp_load_points: cmp: %u, %u: %s\n",
-                counter, p.timestamp, TO_BOOL(counter == p.timestamp)
+                "compare: %u, %u: %s",
+                counter, p.timestamp, to_bool(counter == p.timestamp)
             );
         }
 
@@ -669,10 +669,7 @@ wsp_return_t __wsp_fetch_read_points(
 )
 {
     if (DEBUG) {
-        DEBUG_PRINTF(
-            "__wsp_fetch_read_points: from=%u, until=%u, count=%u\n",
-            from, until, count
-        );
+        DEBUG_PRINTF("from=%u, until=%u, count=%u", from, until, count);
     }
 
     if (from != 0 && until <= from) {
