@@ -5,17 +5,40 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 // __wsp_io_open__mmap {{{
 static int __wsp_io_open__mmap(
     wsp_t *w,
     const char *path,
+    int flags,
     wsp_error_t *e
 )
 {
-    FILE *io_fd = fopen(path, "r+");
+    int mmap_prot;
+    int open_flags;
 
-    if (!io_fd) {
+    if (flags & WSP_READ && flags & WSP_WRITE) {
+        mmap_prot = PROT_READ | PROT_WRITE;
+        open_flags = O_RDWR;
+    }
+    else if (flags & WSP_READ) {
+        mmap_prot = PROT_READ;
+        open_flags = O_RDONLY;
+    }
+    else if (flags & WSP_WRITE) {
+        mmap_prot = PROT_WRITE;
+        open_flags = O_WRONLY;
+    }
+    else {
+        e->type = WSP_ERROR_IO_MODE;
+        return WSP_ERROR;
+    }
+
+    int fn = open(path, open_flags);
+
+    if (fn == -1) {
         e->type = WSP_ERROR_IO;
         e->syserr = errno;
         return WSP_ERROR;
@@ -23,24 +46,24 @@ static int __wsp_io_open__mmap(
 
     struct stat st;
 
-    int fn = fileno(io_fd);
-
     if (fstat(fn, &st) == -1) {
+        close(fn);
         e->type = WSP_ERROR_IO;
         e->syserr = errno;
         return WSP_ERROR;
     }
 
-    void *tmp = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fn, 0);
+    void *tmp = mmap(NULL, st.st_size, mmap_prot, MAP_SHARED, fn, 0);
 
     if (tmp == MAP_FAILED) {
-        fclose(io_fd);
+        close(fn);
         e->type = WSP_ERROR_IO;
         e->syserr = errno;
         return WSP_ERROR;
     }
 
-    w->io_fd = io_fd;
+    w->io_fd = NULL;
+    w->io_fn = fn;
     w->io_mmap = tmp;
     w->io_size = st.st_size;
     w->io_mapping = WSP_MMAP;
@@ -55,9 +78,9 @@ static int __wsp_io_close__mmap(
     wsp_error_t *e
 )
 {
-    if (w->io_fd != NULL) {
-        fclose(w->io_fd);
-        w->io_fd = NULL;
+    if (w->io_fn != -1) {
+        close(w->io_fn);
+        w->io_fn = -1;
     }
 
     if (w->io_mmap != NULL) {

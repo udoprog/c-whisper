@@ -46,7 +46,9 @@ const char *wsp_error_strings[WSP_ERROR_SIZE] = {
     /* WSP_ERROR_ARCHIVE_MISALIGNED */
     "Archive headers are not aligned",
     /* WSP_ERROR_TIME_INTERVAL */
-    "Invalid time interval"
+    "Invalid time interval",
+    /* WSP_ERROR_IO_MODE */
+    "Invalid open mode"
 }; // static initialization }}}
 
 // wsp_strerror {{{
@@ -62,6 +64,7 @@ wsp_return_t wsp_open(
     wsp_t *w,
     const char *path,
     wsp_mapping_t mapping,
+    int flags,
     wsp_error_t *e
 )
 {
@@ -81,7 +84,7 @@ wsp_return_t wsp_open(
         return WSP_ERROR;
     }
 
-    if (w->io->open(w, path, e) == WSP_ERROR) {
+    if (w->io->open(w, path, flags, e) == WSP_ERROR) {
         return WSP_ERROR;
     }
 

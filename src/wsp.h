@@ -78,8 +78,14 @@ typedef enum {
     WSP_ERROR_UNKNOWN_AGGREGATION = 12,
     WSP_ERROR_ARCHIVE_MISALIGNED = 13,
     WSP_ERROR_TIME_INTERVAL = 14,
-    WSP_ERROR_SIZE = 15
+    WSP_ERROR_IO_MODE = 15,
+    WSP_ERROR_SIZE = 16
 } wsp_errornum_t;
+
+typedef enum {
+    WSP_READ = 0x01,
+    WSP_WRITE = 0x02
+} wsp_flag_t;
 
 typedef enum {
     WSP_AVERAGE = 1,
@@ -178,6 +184,7 @@ typedef wsp_return_t(*wsp_io_write_f)(
 typedef wsp_return_t(*wsp_io_open_f)(
     wsp_t *w,
     const char *path,
+    int flags,
     wsp_error_t *e
 );
 
@@ -251,6 +258,8 @@ struct wsp_t {
     wsp_metadata_t meta;
     // file descriptor (as returned by fopen)
     FILE *io_fd;
+    // File number.
+    int io_fn;
     // mapped memory of file.
     void *io_mmap;
     // size of the file, for later munmap call.
@@ -274,6 +283,7 @@ struct wsp_t {
 
 #define WSP_INIT(w) do {\
     (w)->io_fd = NULL;\
+    (w)->io_fn = -1;\
     (w)->io_mmap = NULL;\
     (w)->io_size = 0;\
     (w)->io_mapping = 0;\
@@ -291,12 +301,14 @@ struct wsp_t {
  * prior to this function.
  * path: Path to the file containing the whisper database.
  * mapping: The file mapping method to use; WSP_MMAP or WSP_FILE.
+ * flags: Open flags.
  * e: Error object.
  */
 wsp_return_t wsp_open(
     wsp_t *w,
     const char *path,
     wsp_mapping_t mapping,
+    int flags,
     wsp_error_t *e
 );
 

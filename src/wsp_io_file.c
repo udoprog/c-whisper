@@ -13,10 +13,27 @@
 static int __wsp_io_open__file(
     wsp_t *w,
     const char *path,
+    int flags,
     wsp_error_t *e
 )
 {
-    FILE *io_fd = fopen(path, "r+");
+    const char *mode;
+
+    if (flags & WSP_READ && flags & WSP_WRITE) {
+        mode = "rb+";
+    }
+    else if (flags & WSP_READ) {
+        mode = "rb";
+    }
+    else if (flags & WSP_WRITE) {
+        mode = "wb";
+    }
+    else {
+        e->type = WSP_ERROR_IO_MODE;
+        return WSP_ERROR;
+    }
+
+    FILE *io_fd = fopen(path, mode);
 
     if (!io_fd) {
         e->type = WSP_ERROR_IO;

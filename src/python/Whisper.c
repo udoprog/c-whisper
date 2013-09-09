@@ -43,7 +43,7 @@ static PyObject* Whisper_open(C *self, PyObject *args) {
     wsp_error_t e;
     WSP_ERROR_INIT(&e);
 
-    if (wsp_open(base, path, mapping, &e) == WSP_ERROR) {
+    if (wsp_open(base, path, mapping, WSP_READ | WSP_WRITE, &e) == WSP_ERROR) {
         PyMem_Free(base);
         PyErr_Whisper(&e);
         return NULL;

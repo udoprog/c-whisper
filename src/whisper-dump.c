@@ -26,7 +26,7 @@ int main(int argc, const char **argv) {
     wsp_t w;
     WSP_INIT(&w);
 
-    if (wsp_open(&w, p, WSP_MMAP, &e) == WSP_ERROR) {
+    if (wsp_open(&w, p, WSP_MMAP, WSP_READ, &e) == WSP_ERROR) {
         printf("%s: %s: %s\n", wsp_strerror(&e), strerror(e.syserr), p);
         return 1;
     }
