@@ -1,0 +1,7 @@
+.*.un~
+.*.swp
+*.o
+build
+*.test
+wsp.a
+bin/*
