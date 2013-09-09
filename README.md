@@ -4,7 +4,9 @@ c-whisper
 A C implementation of the whisper database format.
 https://github.com/graphite-project/whisper
 
-Disclaimer: I currently a noob at writing python extensions and might have gotten ref counting wrong in some occasions. Feel free to proof check if you know more than me!
+*Disclaimer*
+I currently a noob at writing python extensions and might have gotten ref counting wrong on some occasions.
+Feel free to proof check the code if you know more than me!
 
 Introduction
 ============
