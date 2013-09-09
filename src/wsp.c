@@ -245,7 +245,7 @@ wsp_return_t wsp_load_points(
     return WSP_OK;
 } // wsp_load_points }}}
 
-inline uint32_t wsp_point_index(
+inline static uint32_t wsp_point_index(
     wsp_archive_t *archive,
     wsp_point_t *base,
     wsp_time_t floored

@@ -47,7 +47,7 @@
 } while (0);
 #endif
 
-inline void __wsp_parse_point(
+inline static void __wsp_parse_point(
     wsp_point_b *buf,
     wsp_point_t *p
 )
@@ -56,7 +56,7 @@ inline void __wsp_parse_point(
     READ8((char *)&p->value, buf->value);
 } // __wsp_parse_point
 
-inline void __wsp_dump_point(
+inline static void __wsp_dump_point(
     wsp_point_t *p,
     wsp_point_b *buf
 )
@@ -65,7 +65,7 @@ inline void __wsp_dump_point(
     READ8(buf->value, (char *)&p->value);
 } // __wsp_dump_point
 
-inline void __wsp_parse_metadata(
+inline static void __wsp_parse_metadata(
     wsp_metadata_b *buf,
     wsp_metadata_t *m
 )
@@ -76,7 +76,7 @@ inline void __wsp_parse_metadata(
     READ4((char *)&m->archives_count, buf->archives_count);
 } // __wsp_parse_metadata
 
-inline void __wsp_dump_metadata(
+inline static void __wsp_dump_metadata(
     wsp_metadata_t *m,
     wsp_metadata_b *buf
 )
@@ -87,7 +87,7 @@ inline void __wsp_dump_metadata(
     READ4(buf->archives_count, (char *)&m->archives_count);
 } // __wsp_dump_metadata
 
-inline void __wsp_parse_archive(
+inline static void __wsp_parse_archive(
     wsp_archive_b *buf,
     wsp_archive_t *archive
 )
@@ -97,7 +97,7 @@ inline void __wsp_parse_archive(
     READ4((char *)&archive->count, buf->count);
 } // __wsp_parse_archive
 
-inline void __wsp_dump_archive(
+inline static void __wsp_dump_archive(
     wsp_archive_t *archive,
     wsp_archive_b *buf
 )

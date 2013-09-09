@@ -7,13 +7,20 @@ OBJECTS=$(SOURCES:.c=.o)
 ARCHIVE=wsp.a
 PREFIX:=/usr/local
 
+WITH_DEBUG:="yes"
 WITH_PYTHON:="yes"
 
 CHECK_LIBS=$(shell pkg-config --libs check)
 
 TESTS+=tests/test_wsp_io_file.1.test
 
-CFLAGS=-g -pedantic -Wall -O3 -std=c99 -fPIC -D_POSIX_C_SOURCE
+CFLAGS=-pedantic -Wall -std=c99 -fPIC -D_POSIX_C_SOURCE
+
+ifeq ($(WITH_DEBUG), "yes")
+CFLAGS+=-g
+else
+CFLAGS+=-O3
+endif
 
 all: bin/whisper-dump
 	@if [[ $(WITH_PYTHON) != "yes" ]]; then\
