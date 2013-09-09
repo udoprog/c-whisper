@@ -30,10 +30,10 @@ Building
 Given that the stars are aligned and you have all required libraries available.
 This will attempt to build everything including the python extensions.
 
-  make clean all
+    > make clean all
 
 To *avoid* building the python extension, invoke it like following;
 
-  make WITH_PYTHON=no clean all
+    > make WITH_PYTHON=no clean all
 
 Someday I might switch build system, but make is incredible powerful done right.
