@@ -1,8 +1,15 @@
+// vim: foldmethod=marker
 #include "wsp_io_file.h"
 
 #include <stdlib.h>
 #include <errno.h>
 
+/*
+ * Open function for WSP_FILE mappings.
+ *
+ * See wsp_open_f for documentation on arguments.
+ */
+// __wsp_io_open__file {{{
 static int __wsp_io_open__file(
     wsp_t *w,
     const char *path,
@@ -25,8 +32,14 @@ static int __wsp_io_open__file(
     w->io = &wsp_io_file;
 
     return WSP_OK;
-}
+} // __wsp_io_open__file }}}
 
+/*
+ * Close function for WSP_FILE mappings.
+ *
+ * See wsp_close_f for documentation on arguments.
+ */
+// __wsp_io_close__file {{{
 static int __wsp_io_close__file(
     wsp_t *w,
     wsp_error_t *e
@@ -38,8 +51,14 @@ static int __wsp_io_close__file(
     }
 
     return WSP_OK;
-}
+} // __wsp_io_close__file }}}
 
+/*
+ * No memory allocation reader function for WSP_FILE mappings.
+ *
+ * See wsp_read_into_f for documentation on arguments.
+ */
+// __wsp_io_read_into__file {{{
 static int __wsp_io_read_into__file(
     wsp_t *w,
     long offset,
@@ -61,13 +80,14 @@ static int __wsp_io_read_into__file(
     }
 
     return WSP_OK;
-} // __wsp_io_read__file
+} // __wsp_io_read_into__file }}}
 
 /*
  * Reader function for WSP_FILE mappings.
  *
  * See wsp_read_f for documentation on arguments.
  */
+// __wsp_io_read__file {{{
 static int __wsp_io_read__file(
     wsp_t *w,
     long offset,
@@ -101,13 +121,14 @@ static int __wsp_io_read__file(
     *buf = tmp;
 
     return WSP_OK;
-} // __wsp_io_read__file
+} // __wsp_io_read__file }}}
 
 /*
  * Writer function for WSP_FILE mappings.
  *
  * See wsp_write_f for documentation on arguments.
  */
+// __wsp_io_write__file {{{
 static int __wsp_io_write__file(
     wsp_t *w,
     long offset,
@@ -129,7 +150,7 @@ static int __wsp_io_write__file(
     }
 
     return WSP_OK;
-} // __wsp_io_write__file
+} // __wsp_io_write__file }}}
 
 wsp_io wsp_io_file = {
     .open = __wsp_io_open__file,
