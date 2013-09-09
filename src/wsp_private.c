@@ -8,6 +8,8 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 
+#include "wsp_debug.h"
+
 // inline parse & dump functions {{{
 #if BYTE_ORDER == LITTLE_ENDIAN
 #define READ4(t, l) do {\

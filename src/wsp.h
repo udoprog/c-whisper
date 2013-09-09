@@ -36,15 +36,6 @@
  */
 #define VALIDATE_ARCHIVE
 
-/**
- * If defined, print debug output.
- */
-#define DEBUG (1)
-
-#if defined(DEBUG)
-#   include "wsp_debug.h"
-#endif /* defined(DEBUG) */
-
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>

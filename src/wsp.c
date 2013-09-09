@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "wsp_debug.h"
+
 // static initialization {{{
 const char *wsp_error_strings[WSP_ERROR_SIZE] = {
     /* WSP_ERROR_NONE */

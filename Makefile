@@ -17,7 +17,7 @@ TESTS+=tests/test_wsp_io_file.1.test
 CFLAGS=-pedantic -Wall -std=c99 -fPIC -D_POSIX_C_SOURCE
 
 ifeq ($(WITH_DEBUG), "yes")
-CFLAGS+=-g
+CFLAGS+=-g -DWSP_DEBUG
 else
 CFLAGS+=-O3
 endif
