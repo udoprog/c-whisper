@@ -7,7 +7,7 @@ OBJECTS=$(SOURCES:.c=.o)
 ARCHIVE=wsp.a
 PREFIX:=/usr/local
 
-WITH_DEBUG:="yes"
+WITH_DEBUG:="no"
 WITH_PYTHON:="yes"
 
 CHECK_LIBS=$(shell pkg-config --libs check)
