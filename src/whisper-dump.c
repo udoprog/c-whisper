@@ -18,8 +18,20 @@ int main(int argc, const char **argv) {
 
     if (argc == 4) {
         with_time_interval = 1;
-        time_from = wsp_time_from_timestamp(atoi(argv[2]));
-        time_until = wsp_time_from_timestamp(atoi(argv[3]));
+
+        if (argv[2][0] == 'N') {
+            time_from = wsp_time_now();
+        }
+        else {
+            time_from = wsp_time_from_timestamp(atoi(argv[2]));
+        }
+
+        if (argv[3][0] == 'N') {
+            time_until = wsp_time_now();
+        }
+        else {
+            time_until = wsp_time_from_timestamp(atoi(argv[3]));
+        }
     }
 
     const char *p = argv[1];
