@@ -36,6 +36,15 @@
  */
 #define VALIDATE_ARCHIVE
 
+/**
+ * If defined, print debug output.
+ */
+#define DEBUG (1)
+
+#if defined(DEBUG)
+#   include "wsp_debug.h"
+#endif /* defined(DEBUG) */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -351,6 +360,15 @@ struct wsp_archive_t {
     uint64_t retention;
 };
 
+wsp_return_t wsp_load_points(
+    wsp_t *w,
+    wsp_archive_t *archive,
+    uint32_t offset,
+    uint32_t size,
+    wsp_point_t *result,
+    wsp_error_t *e
+);
+
 /**
  * Load points between two timestamps.
  *
@@ -363,7 +381,7 @@ struct wsp_archive_t {
  * size: Where to store the length of the resulting points.
  * e: Error object.
  */
-wsp_return_t wsp_load_time_points(
+wsp_return_t wsp_fetch_time_points(
     wsp_t *w,
     wsp_archive_t *archive,
     wsp_time_t time_from,
@@ -374,18 +392,10 @@ wsp_return_t wsp_load_time_points(
 );
 
 /**
- * Like wsp_load_points but will read all points.
- */
-wsp_return_t wsp_load_all_points(
-    wsp_t *w,
-    wsp_archive_t *archive,
-    wsp_point_t *points,
-    wsp_error_t *e
-);
-
-/**
  * Read points into buffer for a specific archive.
  * This function takes care for any wrap around in the archive.
+ *
+ * This function will filter points which does not match the base timestamp.
  *
  * w: Whisper database,
  * archive: Archive to load points from.
@@ -394,7 +404,7 @@ wsp_return_t wsp_load_all_points(
  * points: Where to store points.
  * e: Error object.
  */
-wsp_return_t wsp_load_points(
+wsp_return_t wsp_fetch_points(
     wsp_t *w,
     wsp_archive_t *archive,
     int offset,

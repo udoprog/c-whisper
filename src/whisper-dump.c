@@ -55,7 +55,7 @@ int main(int argc, const char **argv) {
 
         for (j = 0; j < archive->count; j++) {
             point = points[j];
-            printf("%u: %u, %.4f\n", j, point.timestamp, point.value);
+            printf("%u: %u, %.8f\n", j, point.timestamp, point.value);
         }
 
         printf("\n");

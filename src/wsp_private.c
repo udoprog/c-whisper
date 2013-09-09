@@ -65,32 +65,6 @@ inline void __wsp_dump_point(
     READ8(buf->value, (char *)&p->value);
 } // __wsp_dump_point
 
-inline void __wsp_parse_points(
-    wsp_point_b *buf,
-    uint32_t count,
-    wsp_point_t *points
-)
-{
-    uint32_t i;
-
-    for (i = 0; i < count; i++) {
-        __wsp_parse_point(buf + i, points + i);
-    }
-} // __wsp_parse_points
-
-inline void __wsp_dump_points(
-    wsp_point_t *points,
-    uint32_t count,
-    wsp_point_b *buf
-)
-{
-    uint32_t i;
-
-    for (i = 0; i < count; i++) {
-        __wsp_dump_point(points + i, buf + i);
-    }
-} // __wsp_dump_points
-
 inline void __wsp_parse_metadata(
     wsp_metadata_b *buf,
     wsp_metadata_t *m
@@ -342,45 +316,33 @@ static wsp_return_t __wsp_aggregate_min(
 }
 // }}}
 
-/*
- * Setup memory mapping for the specified file.
- *
- * io_fd: The file descriptor to memory map.
- * io_mmap: Pointer to a pointer that will be written to the new memory region.
- * io_size: Pointer to write the file size to.
- * e: Error object.
- */
-// __wsp_setup_mmap {{{
-wsp_return_t __wsp_setup_mmap(
-    FILE *io_fd,
-    void **io_mmap,
-    off_t *io_size,
-    wsp_error_t *e
+// __wsp_parse_points {{{
+void __wsp_parse_points(
+    wsp_point_b *buf,
+    uint32_t count,
+    wsp_point_t *points
 )
 {
-    int fn = fileno(io_fd);
+    uint32_t i;
 
-    struct stat st;
-
-    if (fstat(fn, &st) == -1) {
-        e->type = WSP_ERROR_IO;
-        e->syserr = errno;
-        return WSP_ERROR;
+    for (i = 0; i < count; i++) {
+        __wsp_parse_point(buf + i, points + i);
     }
+} // __wsp_parse_points }}}
 
-    void *tmp = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fn, 0);
+// __wsp_dump_points {{{
+void __wsp_dump_points(
+    wsp_point_t *points,
+    uint32_t count,
+    wsp_point_b *buf
+)
+{
+    uint32_t i;
 
-    if (tmp == MAP_FAILED) {
-        fclose(io_fd);
-        e->type = WSP_ERROR_IO;
-        e->syserr = errno;
-        return WSP_ERROR;
+    for (i = 0; i < count; i++) {
+        __wsp_dump_point(points + i, buf + i);
     }
-
-    *io_mmap = tmp;
-    *io_size = st.st_size;
-    return WSP_OK;
-} // }}} __wsp_setup_mmap
+} // __wsp_dump_points }}}
 
 // __wsp_read_metadata {{{
 wsp_return_t __wsp_read_metadata(
@@ -642,34 +604,6 @@ wsp_return_t __wsp_load_point(
     return WSP_OK;
 } // __wsp_load_point }}}
 
-// __wsp_load_points {{{
-int __wsp_load_points(
-    wsp_t *w,
-    wsp_archive_t *archive,
-    uint32_t offset,
-    uint32_t size,
-    wsp_point_t *result,
-    wsp_error_t *e
-)
-{
-    size_t read_offset = archive->offset + sizeof(wsp_point_b) * offset;
-    size_t read_size = sizeof(wsp_point_b) * size;
-
-    wsp_point_b *buf = NULL;
-
-    if (w->io->read(w, read_offset, read_size, (void **)&buf, e) == WSP_ERROR) {
-        return WSP_ERROR;
-    }
-
-    __wsp_parse_points(buf, size, result);
-
-    if (w->io_manual_buf) {
-        free(buf);
-    }
-
-    return WSP_OK;
-} // __wsp_load_points }}}
-
 // __wsp_point_mod {{{
 uint32_t __wsp_point_mod(int value, uint32_t div)
 {
@@ -681,3 +615,41 @@ uint32_t __wsp_point_mod(int value, uint32_t div)
 
     return (uint32_t)result;
 } // __wsp_point_mod }}}
+
+// __wsp_filter_points {{{
+wsp_return_t __wsp_filter_points(
+    wsp_point_t *base,
+    uint32_t spp,
+    int offset,
+    uint32_t count,
+    wsp_point_t *points,
+    wsp_point_t *result,
+    wsp_error_t *e
+)
+{
+    uint32_t counter = base->timestamp + (spp * offset);
+    uint32_t i;
+
+    for (i = 0; i < count; i++) {
+        wsp_point_t p = points[i];
+
+        if (DEBUG) {
+            DEBUG_PRINTF(
+                "wsp_load_points: cmp: %u, %u: %s\n",
+                counter, p.timestamp, TO_BOOL(counter == p.timestamp)
+            );
+        }
+
+        if (p.timestamp == counter) {
+            result[i] = p;
+        }
+        else {
+            wsp_point_t zero = { .timestamp = counter, .value = NAN };
+            result[i] = zero;
+        }
+
+        counter += spp;
+    }
+
+    return WSP_OK;
+} // __wsp_filter_points }}}

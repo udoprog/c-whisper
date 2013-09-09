@@ -134,18 +134,8 @@ wsp_return_t wsp_close(wsp_t *w, wsp_error_t *e)
     return WSP_OK;
 } // wsp_close }}}
 
-// wsp_load_all_points {{{
-wsp_return_t wsp_load_all_points(
-    wsp_t *w,
-    wsp_archive_t *archive,
-    wsp_point_t *points,
-    wsp_error_t *e
-)
-{
-    return wsp_load_points(w, archive, 0, archive->count, points, e);
-} // wsp_load_all_points }}}
-
-wsp_return_t wsp_load_time_points(
+// wsp_fetch_time_points {{{
+wsp_return_t wsp_fetch_time_points(
     wsp_t *w,
     wsp_archive_t *archive,
     wsp_time_t time_from,
@@ -175,16 +165,17 @@ wsp_return_t wsp_load_time_points(
         count = archive->count;
     }
 
-    if (wsp_load_points(w, archive, offset, count, result, e) == WSP_ERROR) {
+    if (wsp_fetch_points(w, archive, offset, count, result, e) == WSP_ERROR) {
         return WSP_ERROR;
     }
 
     *size = count;
 
     return WSP_OK;
-}
+} // wsp_fetch_time_points }}}
 
-wsp_return_t wsp_load_points(
+// wsp_fetch_points {{{
+wsp_return_t wsp_fetch_points(
     wsp_t *w,
     wsp_archive_t *archive,
     int offset,
@@ -214,52 +205,66 @@ wsp_return_t wsp_load_points(
     uint32_t from = __wsp_point_mod(offset, archive->count);
     uint32_t until = __wsp_point_mod(offset + count, archive->count);
 
-    wsp_point_t read_points[count];
+    wsp_point_t points[count];
 
     // wrap around
     if (until < from) {
         uint32_t a_from = from;
         uint32_t a_size = archive->count - from;
-        wsp_point_t *a_points = read_points;
+        wsp_point_t *a_points = points;
 
         uint32_t b_from = 0;
         uint32_t b_size = until;
-        wsp_point_t *b_points = read_points + a_size;
+        wsp_point_t *b_points = points + a_size;
 
-        if (__wsp_load_points(w, archive, a_from, a_size, a_points, e) == WSP_ERROR) {
+        if (wsp_load_points(w, archive, a_from, a_size, a_points, e) == WSP_ERROR) {
             return WSP_ERROR;
         }
 
-        if (__wsp_load_points(w, archive, b_from, b_size, b_points, e) == WSP_ERROR) {
+        if (wsp_load_points(w, archive, b_from, b_size, b_points, e) == WSP_ERROR) {
             return WSP_ERROR;
         }
     }
     else {
-        uint32_t size = until - from;
-
-        if (__wsp_load_points(w, archive, from, size, read_points, e) == WSP_ERROR) {
+        if (wsp_load_points(w, archive, from, count, points, e) == WSP_ERROR) {
             return WSP_ERROR;
         }
     }
 
-    uint32_t counter = base.timestamp + (archive->spp * offset);
-    uint32_t i;
-    for (i = 0; i < count; i++) {
-        wsp_point_t p = read_points[i];
-
-        if (p.timestamp == counter) {
-            result[i] = p;
-        }
-        else {
-            wsp_point_t zero = { .timestamp = counter, .value = NAN };
-            result[i] = zero;
-        }
-
-        counter += archive->spp;
+    if (__wsp_filter_points(&base, archive->spp, offset, count, points, result, e) == WSP_ERROR) {
+        return WSP_ERROR;
     }
 
     return WSP_OK;
-} // wsp_load_points
+} // wsp_fetch_points }}}
+
+// wsp_load_points {{{
+wsp_return_t wsp_load_points(
+    wsp_t *w,
+    wsp_archive_t *archive,
+    uint32_t offset,
+    uint32_t size,
+    wsp_point_t *result,
+    wsp_error_t *e
+)
+{
+    size_t read_offset = archive->offset + sizeof(wsp_point_b) * offset;
+    size_t read_size = sizeof(wsp_point_b) * size;
+
+    wsp_point_b *buf = NULL;
+
+    if (w->io->read(w, read_offset, read_size, (void **)&buf, e) == WSP_ERROR) {
+        return WSP_ERROR;
+    }
+
+    __wsp_parse_points(buf, size, result);
+
+    if (w->io_manual_buf) {
+        free(buf);
+    }
+
+    return WSP_OK;
+} // wsp_load_points }}}
 
 inline uint32_t wsp_point_index(
     wsp_archive_t *archive,

@@ -6,21 +6,6 @@
 #define _WSP_PRIVATE_H_
 
 /*
- * Setup memory mapping for the specified file.
- *
- * io_fd: The file descriptor to memory map.
- * io_mmap: Pointer to a pointer that will be written to the new memory region.
- * io_size: Pointer to write the file size to.
- * e: Error object.
- */
-wsp_return_t __wsp_setup_mmap(
-    FILE *io_fd,
-    void **io_mmap,
-    off_t *io_size,
-    wsp_error_t *e
-);
-
-/*
  * Read metadata from file.
  *
  * w: Whisper file to read metadata from.
@@ -89,15 +74,33 @@ wsp_return_t __wsp_load_point(
     wsp_error_t *e
 );
 
-int __wsp_load_points(
-    wsp_t *w,
-    wsp_archive_t *archive,
-    uint32_t offset,
-    uint32_t size,
+/**
+ * Filter out points depending on a base values timestamp.
+ *
+ * This makes sure that invalid values will be set to NaN.
+ */
+wsp_return_t __wsp_filter_points(
+    wsp_point_t *base,
+    uint32_t spp,
+    int offset,
+    uint32_t count,
+    wsp_point_t *points,
     wsp_point_t *result,
     wsp_error_t *e
 );
 
 uint32_t __wsp_point_mod(int value, uint32_t div);
+
+void __wsp_parse_points(
+    wsp_point_b *buf,
+    uint32_t count,
+    wsp_point_t *points
+);
+
+void __wsp_dump_points(
+    wsp_point_t *points,
+    uint32_t count,
+    wsp_point_b *buf
+);
 
 #endif /* _WSP_PRIVATE_H_ */

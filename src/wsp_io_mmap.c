@@ -1,3 +1,4 @@
+// vim: foldmethod=marker
 #include "wsp_io_mmap.h"
 
 #include <string.h>
@@ -5,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
+// __wsp_io_open__mmap {{{
 static int __wsp_io_open__mmap(
     wsp_t *w,
     const char *path,
@@ -45,8 +47,9 @@ static int __wsp_io_open__mmap(
     w->io_manual_buf = 0;
 
     return WSP_OK;
-}
+} // __wsp_io_open__mmap }}}
 
+// __wsp_io_close__mmap {{{
 static int __wsp_io_close__mmap(
     wsp_t *w,
     wsp_error_t *e
@@ -63,13 +66,14 @@ static int __wsp_io_close__mmap(
     }
 
     return WSP_OK;
-}
+} // __wsp_io_close__mmap }}}
 
 /*
  * Reader function for WSP_MMAP mappings.
  *
  * See wsp_read_f for documentation on arguments.
  */
+// __wsp_io_read__mmap {{{
 static int __wsp_io_read__mmap(
     wsp_t *file,
     long offset,
@@ -81,13 +85,14 @@ static int __wsp_io_read__mmap(
     /* the beauty of mmaped files */
     *buf = (char *)file->io_mmap + offset;
     return WSP_OK;
-} // __wsp_read__mmap
+} // __wsp_io_read__mmap }}}
 
 /*
  * Reader function for WSP_MMAP mappings.
  *
  * See wsp_read_into_f for documentation on arguments.
  */
+// __wsp_io_read_into__mmap {{{
 static int __wsp_io_read_into__mmap(
     wsp_t *file,
     long offset,
@@ -98,13 +103,14 @@ static int __wsp_io_read_into__mmap(
 {
     memcpy(buf, (char*)file->io_mmap + offset, size);
     return WSP_OK;
-} // __wsp_read__mmap
+} // __wsp_read_into__mmap }}}
 
 /*
  * Writer function for WSP_MMAP mappings.
  *
  * See wsp_write_f for documentation on arguments.
  */
+// __wsp_io_write__mmap {{{
 static int __wsp_io_write__mmap(
     wsp_t *w,
     long offset,
@@ -115,7 +121,7 @@ static int __wsp_io_write__mmap(
 {
     memcpy((char *)w->io_mmap + offset, buf, size);
     return WSP_OK;
-} // __wsp_io_write__mmap
+} // __wsp_io_write__mmap }}}
 
 wsp_io wsp_io_mmap = {
     .open = __wsp_io_open__mmap,
