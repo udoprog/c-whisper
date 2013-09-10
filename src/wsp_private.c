@@ -8,6 +8,8 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 
+#include "wsp_io_file.h"
+#include "wsp_io_mmap.h"
 #include "wsp_debug.h"
 
 // inline parse & dump functions {{{
@@ -77,17 +79,6 @@ inline static void __wsp_parse_metadata(
     READ4((char *)&m->x_files_factor, buf->x_files_factor);
     READ4((char *)&m->archives_count, buf->archives_count);
 } // __wsp_parse_metadata
-
-inline static void __wsp_dump_metadata(
-    wsp_metadata_t *m,
-    wsp_metadata_b *buf
-)
-{
-    READ4(buf->aggregation, (char *)&m->aggregation);
-    READ4(buf->max_retention, (char *)&m->max_retention);
-    READ4(buf->x_files_factor, (char *)&m->x_files_factor);
-    READ4(buf->archives_count, (char *)&m->archives_count);
-} // __wsp_dump_metadata
 
 inline static void __wsp_parse_archive(
     wsp_archive_b *buf,
@@ -332,6 +323,18 @@ void __wsp_parse_points(
     }
 } // __wsp_parse_points }}}
 
+// __wsp_dump_metadata {{{
+void __wsp_dump_metadata(
+    wsp_metadata_t *m,
+    wsp_metadata_b *buf
+)
+{
+    READ4(buf->aggregation, (char *)&m->aggregation);
+    READ4(buf->max_retention, (char *)&m->max_retention);
+    READ4(buf->x_files_factor, (char *)&m->x_files_factor);
+    READ4(buf->archives_count, (char *)&m->archives_count);
+} // __wsp_dump_metadata }}}
+
 // __wsp_dump_points {{{
 void __wsp_dump_points(
     wsp_point_t *points,
@@ -340,11 +343,23 @@ void __wsp_dump_points(
 )
 {
     uint32_t i;
-
     for (i = 0; i < count; i++) {
         __wsp_dump_point(points + i, buf + i);
     }
 } // __wsp_dump_points }}}
+
+// __wsp_dump_archives {{{
+void __wsp_dump_archives(
+    wsp_archive_t *archives,
+    uint32_t count,
+    wsp_archive_b *buf
+)
+{
+    uint32_t i;
+    for (i = 0; i < count; i++) {
+        __wsp_dump_archive(archives + i, buf + i);
+    }
+} // __wsp_dump_archives }}}
 
 // __wsp_read_metadata {{{
 wsp_return_t __wsp_read_metadata(
@@ -699,3 +714,19 @@ wsp_return_t __wsp_fetch_read_points(
 
     return WSP_OK;
 } // __wsp_fetch_read_points }}}
+
+// __wsp_get_io {{{
+wsp_io *__wsp_get_io(wsp_mapping_t mapping)
+{
+    if (mapping == WSP_MMAP) {
+        return &wsp_io_mmap;
+    }
+
+    if (mapping == WSP_FILE) {
+        return &wsp_io_file;
+    }
+
+    return NULL;
+}
+// __wsp_get_io }}}
+

@@ -82,8 +82,13 @@ typedef enum {
     WSP_ERROR_SIZE = 16
 } wsp_errornum_t;
 
+/**
+ * Extra flags to set when opening a database.
+ */
 typedef enum {
+    // open the database in write mode.
     WSP_READ = 0x01,
+    // open the database in read mode.
     WSP_WRITE = 0x02
 } wsp_flag_t;
 
@@ -189,6 +194,24 @@ typedef wsp_return_t(*wsp_io_open_f)(
 );
 
 /**
+ * Create the specified whisper database using the specified mapping.
+ *
+ * path: Path to create the database at.
+ * metadata: Metadata to use in the database.
+ * archives: List of archives.
+ * archives_length: Length of the list of archives.
+ * e: Error object.
+ */
+typedef wsp_return_t (*wsp_io_create_f)(
+    const char *path,
+    wsp_archive_t *archives,
+    size_t archives_length,
+    wsp_aggregation_t aggregation,
+    float x_files_factor,
+    wsp_error_t *e
+);
+
+/**
  * I/O mapping close function.
  *
  * w: Whisper database.
@@ -251,6 +274,7 @@ typedef struct {
     wsp_io_read_f read;
     wsp_io_read_into_f read_into;
     wsp_io_write_f write;
+    wsp_io_create_f create;
 } wsp_io;
 
 struct wsp_t {
@@ -313,6 +337,26 @@ wsp_return_t wsp_open(
 );
 
 /**
+ * Create the specified whisper database using the specified mapping.
+ *
+ * path: Path to create the database at.
+ * metadata: Metadata to use in the database.
+ * archives: List of archives.
+ * archives_length: Length of the list of archives.
+ * mapping: The mapping to use when creating the database.
+ * e: Error object.
+ */
+wsp_return_t wsp_create(
+    const char *path,
+    wsp_archive_t *archives,
+    size_t archives_length,
+    wsp_aggregation_t aggregation,
+    float x_files_factor,
+    wsp_mapping_t mapping,
+    wsp_error_t *e
+);
+
+/**
  * Close an already open whisper database.
  *
  * w: Whisper database.
@@ -362,6 +406,12 @@ struct wsp_archive_t {
     size_t points_size;
     uint64_t retention;
 };
+
+#define WSP_ARCHIVE_INIT(a) do {\
+    (a)->offset = 0;\
+    (a)->spp = 0;\
+    (a)->count = 0;\
+} while(0)
 
 wsp_return_t wsp_load_points(
     wsp_t *w,

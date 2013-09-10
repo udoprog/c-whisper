@@ -3,8 +3,6 @@
 #include "wsp.h"
 #include "wsp_private.h"
 #include "wsp_time.h"
-#include "wsp_io_file.h"
-#include "wsp_io_mmap.h"
 
 #include <time.h>
 #include <errno.h>
@@ -73,13 +71,9 @@ wsp_return_t wsp_open(
         return WSP_ERROR;
     }
 
-    if (mapping == WSP_MMAP) {
-        w->io = &wsp_io_mmap;
-    }
-    else if (mapping == WSP_FILE) {
-        w->io = &wsp_io_file;
-    }
-    else {
+    wsp_io *io = __wsp_get_io(mapping);
+
+    if (io == NULL) {
         e->type = WSP_ERROR_IO;
         return WSP_ERROR;
     }
@@ -107,6 +101,33 @@ wsp_return_t wsp_open(
 
     return WSP_OK;
 } // wsp_open }}}
+
+// wsp_create {{{
+wsp_return_t wsp_create(
+    const char *path,
+    wsp_archive_t *archives,
+    size_t archives_length,
+    wsp_aggregation_t aggregation,
+    float x_files_factor,
+    wsp_mapping_t mapping,
+    wsp_error_t *e
+)
+{
+    wsp_io *io = __wsp_get_io(mapping);
+
+    if (io == NULL) {
+        e->type = WSP_ERROR_IO;
+        return WSP_ERROR;
+    }
+
+    if (io->create == NULL) {
+        e->type = WSP_ERROR_IO;
+        return WSP_ERROR;
+    }
+
+    return io->create(path, archives, archives_length, aggregation, x_files_factor, e);
+}
+// wsp_create }}}
 
 // wsp_close {{{
 wsp_return_t wsp_close(wsp_t *w, wsp_error_t *e)

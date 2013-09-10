@@ -99,6 +99,8 @@ wsp_return_t __wsp_fetch_read_points(
     wsp_error_t *e
 );
 
+wsp_io *__wsp_get_io(wsp_mapping_t mapping);
+
 uint32_t __wsp_point_mod(int value, uint32_t div);
 
 void __wsp_parse_points(
@@ -107,10 +109,21 @@ void __wsp_parse_points(
     wsp_point_t *points
 );
 
+void __wsp_dump_metadata(
+    wsp_metadata_t *m,
+    wsp_metadata_b *buf
+);
+
 void __wsp_dump_points(
     wsp_point_t *points,
     uint32_t count,
     wsp_point_b *buf
+);
+
+void __wsp_dump_archives(
+    wsp_archive_t *archives,
+    uint32_t count,
+    wsp_archive_b *buf
 );
 
 #endif /* _WSP_PRIVATE_H_ */

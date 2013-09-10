@@ -13,7 +13,7 @@ CHECK_LIBS=$(shell pkg-config --libs check)
 
 TESTS+=tests/test_wsp_io_file.1.test
 
-CFLAGS=-pedantic -Wall -std=c99 -fPIC -D_POSIX_C_SOURCE
+CFLAGS=-pedantic -Wall -std=c99 -fPIC -D_POSIX_C_SOURCE=200112
 
 ifeq ($(WITH_DEBUG), "yes")
 CFLAGS+=-g -DWSP_DEBUG

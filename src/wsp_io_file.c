@@ -174,5 +174,6 @@ wsp_io wsp_io_file = {
     .close = __wsp_io_close__file,
     .read = __wsp_io_read__file,
     .read_into = __wsp_io_read_into__file,
-    .write = __wsp_io_write__file
+    .write = __wsp_io_write__file,
+    .create = NULL
 };
