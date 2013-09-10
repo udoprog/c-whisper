@@ -1,9 +1,15 @@
+ARCHIVE=wsp.a
+
 SOURCES+=src/wsp.c
 SOURCES+=src/wsp_private.c
 SOURCES+=src/wsp_time.c
 SOURCES+=src/wsp_io_file.c
 SOURCES+=src/wsp_io_mmap.c
-ARCHIVE=wsp.a
+
+BINARIES+=src/whisper-dump
+BINARIES+=src/whisper-create
+BINARIES+=src/whisper-update
+
 PREFIX:=/usr/local
 
 WITH_DEBUG:="yes"
@@ -22,9 +28,9 @@ else
 CFLAGS+=-O3
 endif
 
-OBJECTS=$(SOURCES:.c=.o)
+OBJECTS+=$(SOURCES:.c=.o)
 
-all: bin/whisper-dump
+all: $(ARCHIVE) $(BINARIES)
 	@if [[ $(WITH_PYTHON) != "yes" ]]; then\
 		echo "Not building python bindings";\
     else\
@@ -34,8 +40,11 @@ all: bin/whisper-dump
 clean:
 	$(RM) $(OBJECTS)
 	$(RM) $(ARCHIVE)
-	$(RM) bin/*
+	$(RM) $(BINARIES)
 	$(RM) -R build
+
+$(ARCHIVE): $(OBJECTS)
+	$(AR) cr $@ $(OBJECTS)
 
 %.test: %.o
 	$(CC) $< $(CHECK_LIBS) -o $@
@@ -50,11 +59,5 @@ tests: $(TESTS)
 python-bindings:
 	python setup.py build
 
-$(ARCHIVE): $(OBJECTS)
-	$(AR) cr $@ $(OBJECTS)
-
-bin:
-	mkdir $@
-
-bin/whisper-dump: bin src/whisper-dump.o $(ARCHIVE)
-	$(CC) $(CFLAGS) -o $@ src/whisper-dump.o $(ARCHIVE)
+src/whisper-%: $(ARCHIVE)
+	$(CC) $(CFLAGS) -o $@ $@.c $(ARCHIVE)

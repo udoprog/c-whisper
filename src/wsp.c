@@ -46,7 +46,19 @@ const char *wsp_error_strings[WSP_ERROR_SIZE] = {
     /* WSP_ERROR_TIME_INTERVAL */
     "Invalid time interval",
     /* WSP_ERROR_IO_MODE */
-    "Invalid open mode"
+    "Invalid open mode",
+    /* WSP_ERROR_MMAP */
+    "mmap failed",
+    /* WSP_ERROR_FTRUNCATE */
+    "ftruncate failed",
+    /* WSP_ERROR_FSYNC */
+    "fsync failed",
+    /* WSP_ERROR_OPEN */
+    "open failed",
+    /* WSP_ERROR_FOPEN */
+    "fopen failed",
+    /* WSP_ERROR_FILENO */
+    "fileno failed"
 }; // static initialization }}}
 
 // wsp_strerror {{{
@@ -78,6 +90,8 @@ wsp_return_t wsp_open(
         return WSP_ERROR;
     }
 
+    w->io = io;
+
     if (w->io->open(w, path, flags, e) == WSP_ERROR) {
         return WSP_ERROR;
     }
@@ -90,7 +104,6 @@ wsp_return_t wsp_open(
     }
 
     w->meta = meta;
-
     w->archives = NULL;
     w->archives_size = sizeof(wsp_archive_t) * meta.archives_count;
     w->archives_count = 0;
@@ -105,8 +118,8 @@ wsp_return_t wsp_open(
 // wsp_create {{{
 wsp_return_t wsp_create(
     const char *path,
-    wsp_archive_t *archives,
-    size_t archives_length,
+    wsp_archive_input_t *archives,
+    size_t count,
     wsp_aggregation_t aggregation,
     float x_files_factor,
     wsp_mapping_t mapping,
@@ -125,7 +138,40 @@ wsp_return_t wsp_create(
         return WSP_ERROR;
     }
 
-    return io->create(path, archives, archives_length, aggregation, x_files_factor, e);
+    off_t size = sizeof(wsp_metadata_b) + sizeof(wsp_archive_b) * count;
+
+    uint32_t max_retention = 0;
+
+    wsp_metadata_t created_metadata = {
+        .aggregation = aggregation,
+        .max_retention = max_retention,
+        .x_files_factor = x_files_factor,
+        .archives_count = count
+    };
+
+    wsp_archive_t created_archives[count];
+
+    uint32_t i;
+    for (i = 0; i < count; i++) {
+        wsp_archive_input_t *input = archives + i;
+        wsp_archive_t *created = created_archives + i;
+
+        size_t points_size = sizeof(wsp_point_b) * input->count;
+
+        created->offset = size;
+        created->spp = input->spp;
+        created->count = input->count;
+
+        uint32_t retention = input->spp * input->count;
+
+        if (max_retention < retention) {
+            max_retention = retention;
+        }
+
+        size += points_size;
+    }
+
+    return io->create(path, size, created_archives, count, &created_metadata, e);
 }
 // wsp_create }}}
 
@@ -294,7 +340,7 @@ wsp_return_t wsp_update_point(
     wsp_t *w,
     wsp_archive_t *archive,
     wsp_time_t time,
-    double value,
+    wsp_value_t value,
     wsp_point_t *base,
     wsp_error_t *e
 )
@@ -327,12 +373,16 @@ wsp_return_t wsp_update_point(
 } // wsp_update_point }}}
 
 // wsp_update {{{
-wsp_return_t wsp_update(wsp_t *w, wsp_point_t *p, wsp_error_t *e)
+wsp_return_t wsp_update(
+    wsp_t *w,
+    wsp_point_input_t *point,
+    wsp_error_t *e
+)
 {
     wsp_time_t now = wsp_time_now();
 
-    wsp_time_t timestamp = p->timestamp;
-    double value = p->value;
+    wsp_time_t timestamp = point->timestamp;
+    wsp_value_t value = point->value;
 
     if (timestamp == 0) {
         timestamp = now;
@@ -378,7 +428,7 @@ wsp_return_t wsp_update(wsp_t *w, wsp_point_t *p, wsp_error_t *e)
             return WSP_ERROR;
         }
 
-        double value = 0;
+        wsp_value_t value = 0;
 
         if (w->meta.aggregate(w, prev_points, prev_count, &value, &skip, e) == WSP_ERROR) {
             return WSP_ERROR;
@@ -397,3 +447,137 @@ wsp_return_t wsp_update(wsp_t *w, wsp_point_t *p, wsp_error_t *e)
 
     return WSP_OK;
 } // wsp_update }}}
+
+// wsp_parse_factor {{{
+wsp_return_t wsp_parse_factor(
+    const char *string,
+    size_t length,
+    int *result
+)
+{
+    if (length <= 0) {
+        return 0;
+    }
+
+    switch (string[length - 1]) {
+    case 'y':
+        *result = 3600 * 24 * 365;
+        break;
+    case 'w':
+        *result = 3600 * 24 * 7;
+        break;
+    case 'd':
+        *result = 3600 * 24;
+        break;
+    case 'h':
+        *result = 3600;
+        break;
+    case 'm':
+        *result = 60;
+        break;
+    default:
+        return WSP_ERROR;
+    }
+
+    return WSP_OK;
+} // wsp_parse_factor }}}
+
+// wsp_parse_archive_input {{{
+wsp_return_t wsp_parse_archive_input(
+    const char *string,
+    wsp_archive_input_t *archive
+)
+{
+    size_t spp_l = 0;
+    char spp_s[64];
+    size_t points_l = 0;
+    char count_s[64];
+
+    while (*string != ':' && *string != '\0' && spp_l < sizeof(spp_s)) {
+        spp_s[spp_l++] = *(string++);
+    }
+
+    if (*string != ':' || spp_l == 0) {
+        return WSP_ERROR;
+    }
+
+    string++;
+
+    while (*string != '\0' && points_l < sizeof(count_s)) {
+        count_s[points_l++] = *(string++);
+    }
+
+    if (*string != '\0' || points_l == 0) {
+        return WSP_ERROR;
+    }
+
+    spp_s[spp_l] = '\0';
+    count_s[points_l] = '\0';
+
+    int factor;
+
+    if (wsp_parse_factor(spp_s, spp_l, &factor) == WSP_ERROR) {
+        return WSP_ERROR;
+    }
+
+    if (factor == 0) {
+        return WSP_ERROR;
+    }
+
+    if (factor != 1) {
+        spp_s[spp_l - 1] = '\0';
+    }
+
+    size_t spp = strtol(spp_s, NULL, 10) * factor;
+    size_t count = strtol(count_s, NULL, 10);
+
+    if (spp == 0 || count == 0) {
+        return WSP_ERROR;
+    }
+
+    archive->spp = spp;
+    archive->count = count;
+
+    return WSP_OK;
+} // wsp_parse_archive_input }}}
+
+wsp_return_t wsp_parse_point_input(
+    const char *string,
+    wsp_point_input_t *point
+)
+{
+    size_t timestamp_l = 0;
+    char timestamp_s[64];
+    size_t points_l = 0;
+    char value_s[64];
+
+    while (*string != ':' && *string != '\0' && timestamp_l < sizeof(timestamp_s)) {
+        timestamp_s[timestamp_l++] = *(string++);
+    }
+
+    if (*string != ':' || timestamp_l == 0) {
+        return WSP_ERROR;
+    }
+
+    string++;
+
+    while (*string != '\0' && points_l < sizeof(value_s)) {
+        value_s[points_l++] = *(string++);
+    }
+
+    if (*string != '\0' || points_l == 0) {
+        return WSP_ERROR;
+    }
+
+    timestamp_s[timestamp_l] = '\0';
+    value_s[points_l] = '\0';
+
+    size_t timestamp_i = strtol(timestamp_s, NULL, 10);
+    double value = strtod(value_s, NULL);
+    wsp_time_t timestamp = wsp_time_from_timestamp(timestamp_i);
+
+    point->timestamp = timestamp;
+    point->value = value;
+
+    return WSP_OK;
+}

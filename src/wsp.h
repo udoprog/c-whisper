@@ -79,7 +79,13 @@ typedef enum {
     WSP_ERROR_ARCHIVE_MISALIGNED = 13,
     WSP_ERROR_TIME_INTERVAL = 14,
     WSP_ERROR_IO_MODE = 15,
-    WSP_ERROR_SIZE = 16
+    WSP_ERROR_MMAP = 16,
+    WSP_ERROR_FTRUNCATE = 17,
+    WSP_ERROR_FSYNC = 18,
+    WSP_ERROR_OPEN = 19,
+    WSP_ERROR_FOPEN = 20,
+    WSP_ERROR_FILENO = 21,
+    WSP_ERROR_SIZE = 22
 } wsp_errornum_t;
 
 /**
@@ -106,8 +112,12 @@ typedef struct wsp_point_b wsp_point_b;
 typedef struct wsp_point_t wsp_point_t;
 typedef struct wsp_archive_b wsp_archive_b;
 typedef struct wsp_archive_t wsp_archive_t;
+typedef struct wsp_archive_input_t wsp_archive_input_t;
+typedef struct wsp_point_input_t wsp_point_input_t;
 typedef struct wsp_metadata_b wsp_metadata_b;
 typedef struct wsp_metadata_t wsp_metadata_t;
+
+typedef double wsp_value_t;
 
 const char *wsp_strerror(wsp_error_t *);
 
@@ -204,10 +214,10 @@ typedef wsp_return_t(*wsp_io_open_f)(
  */
 typedef wsp_return_t (*wsp_io_create_f)(
     const char *path,
-    wsp_archive_t *archives,
-    size_t archives_length,
-    wsp_aggregation_t aggregation,
-    float x_files_factor,
+    size_t size,
+    wsp_archive_t *created_archives,
+    size_t count,
+    wsp_metadata_t *metadata,
     wsp_error_t *e
 );
 
@@ -239,7 +249,7 @@ typedef wsp_return_t(*wsp_aggregate_f)(
     wsp_t *w,
     wsp_point_t *points,
     uint32_t count,
-    double *value,
+    wsp_value_t *value,
     int *skip,
     wsp_error_t *e
 );
@@ -348,7 +358,7 @@ wsp_return_t wsp_open(
  */
 wsp_return_t wsp_create(
     const char *path,
-    wsp_archive_t *archives,
+    wsp_archive_input_t *archives,
     size_t archives_length,
     wsp_aggregation_t aggregation,
     float x_files_factor,
@@ -376,7 +386,7 @@ wsp_return_t wsp_close(
  */
 wsp_return_t wsp_update(
     wsp_t *w,
-    wsp_point_t *p,
+    wsp_point_input_t *p,
     wsp_error_t *e
 );
 
@@ -384,7 +394,7 @@ wsp_return_t wsp_update_point(
     wsp_t *w,
     wsp_archive_t *archive,
     wsp_time_t timestamp,
-    double value,
+    wsp_value_t value,
     wsp_point_t *base,
     wsp_error_t *e
 );
@@ -405,6 +415,18 @@ struct wsp_archive_t {
     /* extra fields */
     size_t points_size;
     uint64_t retention;
+};
+
+// archive input structure.
+struct wsp_archive_input_t {
+    uint32_t spp;
+    uint32_t count;
+};
+
+// point input structure.
+struct wsp_point_input_t {
+    wsp_time_t timestamp;
+    wsp_value_t value;
 };
 
 #define WSP_ARCHIVE_INIT(a) do {\
@@ -466,14 +488,31 @@ wsp_return_t wsp_fetch_points(
     wsp_error_t *e
 );
 
+/* parse functions */
+wsp_return_t wsp_parse_factor(
+    const char *string,
+    size_t length,
+    int *result
+);
+
+wsp_return_t wsp_parse_archive_input(
+    const char *string,
+    wsp_archive_input_t *archive
+);
+
+wsp_return_t wsp_parse_point_input(
+    const char *string,
+    wsp_point_input_t *point
+);
+
 struct wsp_point_b {
     char timestamp[sizeof(uint32_t)];
-    char value[sizeof(double)];
+    char value[sizeof(wsp_value_t)];
 };
 
 struct wsp_point_t {
     wsp_time_t timestamp;
-    double value;
+    wsp_value_t value;
 };
 
 #define WSP_POINT_INIT(p) do { \

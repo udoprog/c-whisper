@@ -9,6 +9,7 @@
 
 #include "wsp_io_mmap.h"
 #include "wsp_private.h"
+#include "wsp_debug.h"
 
 // __wsp_io_open__mmap {{{
 static int __wsp_io_open__mmap(
@@ -148,50 +149,44 @@ static int __wsp_io_write__mmap(
     return WSP_OK;
 } // __wsp_io_write__mmap }}}
 
-// __wsp_io_create_generic
-wsp_return_t __wsp_io_create__generic(
+/*
+ * Create function for WSP_MMAP mappings.
+ */
+// __wsp_io_create_generic {{{
+wsp_return_t __wsp_io_create__mmap(
     const char *path,
-    wsp_archive_t *archives,
+    size_t size,
+    wsp_archive_t *created_archives,
     size_t count,
-    wsp_aggregation_t aggregation,
-    float x_files_factor,
+    wsp_metadata_t *metadata,
     wsp_error_t *e
 )
 {
-    int fn = open(path, O_CREAT);
+    off_t archives_offset = sizeof(wsp_metadata_b);
+
+    int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
+
+    int fn = open(path, O_CREAT | O_RDWR, mode);
 
     if (fn == -1) {
-        e->type = WSP_ERROR_IO;
+        e->type = WSP_ERROR_OPEN;
         e->syserr = errno;
         return WSP_ERROR;
     }
 
-    off_t archives_offset = sizeof(wsp_metadata_b);
-
-    off_t size = archives_offset + \
-                 sizeof(wsp_archive_b) * count;
-
-    uint32_t max_retention = 0;
-
-    uint32_t i;
-    for (i = 0; i < count; i++) {
-        wsp_archive_t *archive = archives + i;
-        size_t points_size = sizeof(wsp_point_b) * archive->count;
-
-        archive->offset = size;
-
-        uint32_t retention = archive->spp * archive->count;
-
-        if (max_retention < retention) {
-            max_retention = retention;
-        }
-
-        size += points_size;
+    if (DEBUG) {
+        DEBUG_PRINTF("size = %zu", size);
     }
 
     if (ftruncate(fn, size) == -1) {
         close(fn);
-        e->type = WSP_ERROR_IO;
+        e->type = WSP_ERROR_FTRUNCATE;
+        e->syserr = errno;
+        return WSP_ERROR;
+    }
+
+    if (fsync(fn) == -1) {
+        e->type = WSP_ERROR_FSYNC;
         e->syserr = errno;
         return WSP_ERROR;
     }
@@ -200,28 +195,21 @@ wsp_return_t __wsp_io_create__generic(
 
     if (map == MAP_FAILED) {
         close(fn);
-        e->type = WSP_ERROR_IO;
+        e->type = WSP_ERROR_MMAP;
         e->syserr = errno;
         return WSP_ERROR;
     }
 
-    wsp_metadata_t metadata = {
-        .aggregation = aggregation,
-        .max_retention = max_retention,
-        .x_files_factor = x_files_factor,
-        .archives_count = count
-    };
-
     char *buf = (char *)map;
 
-    __wsp_dump_metadata(&metadata, (void *)buf);
-    __wsp_dump_archives(archives, count, (void *)(buf + archives_offset));
+    __wsp_dump_metadata(metadata, (void *)buf);
+    __wsp_dump_archives(created_archives, count, (void *)(buf + archives_offset));
 
     munmap(map, size);
     close(fn);
 
     return WSP_OK;
-}
+} // __wsp_io_create__mmap }}}
 
 wsp_io wsp_io_mmap = {
     .open = __wsp_io_open__mmap,
@@ -229,5 +217,5 @@ wsp_io wsp_io_mmap = {
     .read = __wsp_io_read__mmap,
     .read_into = __wsp_io_read_into__mmap,
     .write = __wsp_io_write__mmap,
-    .create = __wsp_io_create__generic,
+    .create = __wsp_io_create__mmap,
 };

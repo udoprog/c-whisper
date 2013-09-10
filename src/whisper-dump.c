@@ -34,12 +34,12 @@ int main(int argc, const char **argv) {
         }
     }
 
-    const char *p = argv[1];
+    const char *path = argv[1];
     wsp_t w;
     WSP_INIT(&w);
 
-    if (wsp_open(&w, p, WSP_MMAP, WSP_READ, &e) == WSP_ERROR) {
-        printf("%s: %s: %s\n", wsp_strerror(&e), strerror(e.syserr), p);
+    if (wsp_open(&w, path, WSP_MMAP, WSP_READ, &e) == WSP_ERROR) {
+        printf("%s: %s: %s\n", wsp_strerror(&e), strerror(e.syserr), path);
         return 1;
     }
 
@@ -72,7 +72,7 @@ int main(int argc, const char **argv) {
 
         if (with_time_interval) {
             if (wsp_fetch_time_points(&w, archive, time_from, time_until, points, &count, &e) == WSP_ERROR) {
-                printf("%s: %s: %s\n", wsp_strerror(&e), strerror(e.syserr), p);
+                printf("%s: %s: %s\n", wsp_strerror(&e), strerror(e.syserr), path);
                 return 1;
             }
         }
@@ -80,7 +80,7 @@ int main(int argc, const char **argv) {
             count = archive->count;
 
             if (wsp_load_points(&w, archive, 0, archive->count, points, &e) == WSP_ERROR) {
-                printf("%s: %s: %s\n", wsp_strerror(&e), strerror(e.syserr), p);
+                printf("%s: %s: %s\n", wsp_strerror(&e), strerror(e.syserr), path);
                 return 1;
             }
         }

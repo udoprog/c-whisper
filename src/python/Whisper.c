@@ -178,7 +178,7 @@ static PyObject* Whisper_update_point(C *self, PyObject *args) {
     wsp_error_t e;
     WSP_ERROR_INIT(&e);
 
-    wsp_point_t p = {
+    wsp_point_input_t p = {
         .timestamp = timestamp,
         .value = value
     };

@@ -4,5 +4,7 @@
 build
 *.test
 wsp.a
-bin/*
+src/whisper-create
+src/whisper-dump
+src/whisper-update
 *.wsp

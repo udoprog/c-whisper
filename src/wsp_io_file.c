@@ -1,8 +1,10 @@
 // vim: foldmethod=marker
-#include "wsp_io_file.h"
-
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
+
+#include "wsp_io_file.h"
+#include "wsp_private.h"
 
 /*
  * Open function for WSP_FILE mappings.
@@ -169,11 +171,84 @@ static int __wsp_io_write__file(
     return WSP_OK;
 } // __wsp_io_write__file }}}
 
+/*
+ * Create function for WSP_FILE mappings.
+ */
+// __wsp_io_create_generic {{{
+wsp_return_t __wsp_io_create__file(
+    const char *path,
+    size_t size,
+    wsp_archive_t *created_archives,
+    size_t count,
+    wsp_metadata_t *metadata,
+    wsp_error_t *e
+)
+{
+    FILE *fp = fopen(path, "ab");
+
+    if (fp == NULL) {
+        e->type = WSP_ERROR_FOPEN;
+        e->syserr = errno;
+        return WSP_ERROR;
+    }
+
+    int fn = fileno(fp);
+
+    if (fn == -1) {
+        fclose(fp);
+        e->type = WSP_ERROR_FILENO;
+        e->syserr = errno;
+        return WSP_ERROR;
+    }
+
+    if (ftruncate(fn, size) == -1) {
+        fclose(fp);
+        e->type = WSP_ERROR_FTRUNCATE;
+        e->syserr = errno;
+        return WSP_ERROR;
+    }
+
+    if (fflush(fp) == -1) {
+        fclose(fp);
+        e->type = WSP_ERROR_FSYNC;
+        e->syserr = errno;
+        return WSP_ERROR;
+    }
+
+    wsp_metadata_b metadata_buf;
+    wsp_archive_b archives_buf[count];
+
+    __wsp_dump_metadata(metadata, (void *)&metadata_buf);
+    __wsp_dump_archives(created_archives, count, (void *)archives_buf);
+
+    if (fseek(fp, 0, SEEK_SET) == -1) {
+        e->type = WSP_ERROR_OFFSET;
+        e->syserr = errno;
+        return WSP_ERROR;
+    }
+
+    if (fwrite(&metadata_buf, sizeof(wsp_metadata_b), 1, fp) != 1) {
+        e->type = WSP_ERROR_IO;
+        e->syserr = errno;
+        return WSP_ERROR;
+    }
+
+    if (fwrite(archives_buf, sizeof(wsp_archive_b) * count, 1, fp) != 1) {
+        e->type = WSP_ERROR_IO;
+        e->syserr = errno;
+        return WSP_ERROR;
+    }
+
+    fclose(fp);
+
+    return WSP_OK;
+} // __wsp_io_create__mmap }}}
+
 wsp_io wsp_io_file = {
     .open = __wsp_io_open__file,
     .close = __wsp_io_close__file,
     .read = __wsp_io_read__file,
     .read_into = __wsp_io_read_into__file,
     .write = __wsp_io_write__file,
-    .create = NULL
+    .create = __wsp_io_create__file
 };
