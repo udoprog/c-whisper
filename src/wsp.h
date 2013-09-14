@@ -59,33 +59,35 @@ typedef enum {
 typedef enum {
     WSP_MAPPING_NONE = 0,
     WSP_FILE = 1,
-    WSP_MMAP = 2
+    WSP_MMAP = 2,
+    WSP_MEMORY = 3
 } wsp_mapping_t;
 
 typedef enum {
     WSP_ERROR_NONE = 0,
-    WSP_ERROR_NOT_INITIALIZED = 1,
-    WSP_ERROR_ALREADY_INITIALIZED = 2,
-    WSP_ERROR_IO = 3,
-    WSP_ERROR_NOT_OPEN = 4,
-    WSP_ERROR_ALREADY_OPEN = 5,
-    WSP_ERROR_MALLOC = 6,
-    WSP_ERROR_OFFSET = 7,
-    WSP_ERROR_FUTURE_TIMESTAMP = 8,
-    WSP_ERROR_RETENTION = 9,
-    WSP_ERROR_ARCHIVE = 10,
-    WSP_ERROR_POINT_OOB = 11,
-    WSP_ERROR_UNKNOWN_AGGREGATION = 12,
-    WSP_ERROR_ARCHIVE_MISALIGNED = 13,
-    WSP_ERROR_TIME_INTERVAL = 14,
-    WSP_ERROR_IO_MODE = 15,
-    WSP_ERROR_MMAP = 16,
-    WSP_ERROR_FTRUNCATE = 17,
-    WSP_ERROR_FSYNC = 18,
-    WSP_ERROR_OPEN = 19,
-    WSP_ERROR_FOPEN = 20,
-    WSP_ERROR_FILENO = 21,
-    WSP_ERROR_SIZE = 22
+    WSP_ERROR_IO = 1,
+    WSP_ERROR_NOT_OPEN = 2,
+    WSP_ERROR_ALREADY_OPEN = 3,
+    WSP_ERROR_MALLOC = 4,
+    WSP_ERROR_OFFSET = 5,
+    WSP_ERROR_FUTURE_TIMESTAMP = 6,
+    WSP_ERROR_RETENTION = 7,
+    WSP_ERROR_ARCHIVE = 8,
+    WSP_ERROR_POINT_OOB = 9,
+    WSP_ERROR_UNKNOWN_AGGREGATION = 10,
+    WSP_ERROR_ARCHIVE_MISALIGNED = 11,
+    WSP_ERROR_TIME_INTERVAL = 12,
+    WSP_ERROR_IO_MODE = 13,
+    WSP_ERROR_MMAP = 14,
+    WSP_ERROR_FTRUNCATE = 15,
+    WSP_ERROR_FSYNC = 16,
+    WSP_ERROR_OPEN = 17,
+    WSP_ERROR_FOPEN = 18,
+    WSP_ERROR_FILENO = 19,
+    WSP_ERROR_IO_MISSING = 20,
+    WSP_ERROR_IO_INVALID = 21,
+    WSP_ERROR_IO_OFFSET = 22,
+    WSP_ERROR_SIZE = 23
 } wsp_errornum_t;
 
 /**
@@ -290,21 +292,15 @@ typedef struct {
 struct wsp_t {
     // metadata header
     wsp_metadata_t meta;
-    // file descriptor (as returned by fopen)
-    FILE *io_fd;
-    // File number.
-    int io_fn;
-    // mapped memory of file.
-    void *io_mmap;
-    // size of the file, for later munmap call.
-    off_t io_size;
     // specific type of mapping.
     wsp_mapping_t io_mapping;
+    // io functions.
+    wsp_io *io;
+    // data related to a specific io instance.
+    void *io_instance;
     // indicates if I/O allocates an internal buffer that needs to be
     // de-allocated after it has been used.
     int io_manual_buf;
-    // io functions.
-    wsp_io *io;
     // archives
     // these are empty (NULL) until wsp_load_archives has been called.
     wsp_archive_t *archives;
@@ -316,10 +312,7 @@ struct wsp_t {
 };
 
 #define WSP_INIT(w) do {\
-    (w)->io_fd = NULL;\
-    (w)->io_fn = -1;\
-    (w)->io_mmap = NULL;\
-    (w)->io_size = 0;\
+    (w)->io_instance = NULL;\
     (w)->io_mapping = 0;\
     (w)->io_manual_buf = 0;\
     (w)->io = NULL;\
@@ -528,5 +521,24 @@ struct wsp_point_t {
 
 #define WSP_ARCHIVE_OFFSET(index) \
     (sizeof(wsp_metadata_b) + sizeof(wsp_archive_b) * index)
+
+/*
+ * Check that the io instance is of the expected type and assign it to self.
+ *
+ * file: The Whisper Database.
+ * e: Error object.
+ */
+#define WSP_IO_CHECK(file, io_type, var_type, self, e) do { \
+    if (file->io_instance == NULL) { \
+        e->type = WSP_ERROR_IO_MISSING; \
+        return WSP_ERROR; \
+    } \
+    if (file->io_mapping != io_type) { \
+        e->type = WSP_ERROR_IO_INVALID; \
+        return WSP_ERROR; \
+    } \
+    self = (var_type *)file->io_instance; \
+} while(0)
+
 
 #endif /* _WSP_H_ */

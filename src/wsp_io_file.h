@@ -9,4 +9,8 @@
  */
 extern wsp_io wsp_io_file;
 
+typedef struct {
+    FILE *fd;
+} wsp_io_file_inst_t;
+
 #endif /* _WSP_IO_FILE_H_ */

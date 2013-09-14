@@ -17,10 +17,6 @@
 const char *wsp_error_strings[WSP_ERROR_SIZE] = {
     /* WSP_ERROR_NONE */
     "No error",
-    /* WSP_ERROR_NOT_INITIALIZED */
-    "Context not initialized",
-    /* WSP_ERROR_ALREADY_INITIALIZED */
-    "Context already initialized",
     /* WSP_ERROR_IO */
     "I/O error",
     /* WSP_ERROR_NOT_OPEN */
@@ -58,7 +54,13 @@ const char *wsp_error_strings[WSP_ERROR_SIZE] = {
     /* WSP_ERROR_FOPEN */
     "fopen failed",
     /* WSP_ERROR_FILENO */
-    "fileno failed"
+    "fileno failed",
+    /* WSP_ERROR_IO_MISSING */
+    "Database not open for I/O",
+    /* WSP_ERROR_IO_INVALID */
+    "Invalid I/O operation for this instance",
+    /* WSP_ERROR_IO_OFFSET */
+    "I/O operations on invalid offset and size",
 }; // static initialization }}}
 
 // wsp_strerror {{{
@@ -78,7 +80,7 @@ wsp_return_t wsp_open(
     wsp_error_t *e
 )
 {
-    if (w->io_fd != NULL || w->io_mmap != NULL) {
+    if (w->io_instance != NULL) {
         e->type = WSP_ERROR_ALREADY_OPEN;
         return WSP_ERROR;
     }
@@ -157,6 +159,16 @@ wsp_return_t wsp_create(
         wsp_archive_t *created = created_archives + i;
 
         size_t points_size = sizeof(wsp_point_b) * input->count;
+
+        if (input->count <= 0) {
+            e->type = WSP_ERROR_ARCHIVE;
+            return WSP_ERROR;
+        }
+
+        if (input->spp <= 0) {
+            e->type = WSP_ERROR_ARCHIVE;
+            return WSP_ERROR;
+        }
 
         created->offset = size;
         created->spp = input->spp;

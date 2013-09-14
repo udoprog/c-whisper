@@ -35,17 +35,26 @@ static int __wsp_io_open__file(
         return WSP_ERROR;
     }
 
-    FILE *io_fd = fopen(path, mode);
+    FILE *fd = fopen(path, mode);
 
-    if (!io_fd) {
+    if (!fd) {
         e->type = WSP_ERROR_IO;
         e->syserr = errno;
         return WSP_ERROR;
     }
 
-    w->io_fd = io_fd;
-    w->io_mmap = NULL;
-    w->io_size = 0;
+    wsp_io_file_inst_t *self = malloc(sizeof(wsp_io_file_inst_t));
+
+    if (self == NULL) {
+        fclose(fd);
+        e->type = WSP_ERROR_MALLOC;
+        e->syserr = errno;
+        return WSP_ERROR;
+    }
+
+    self->fd = fd;
+
+    w->io_instance = self;
     w->io_mapping = WSP_FILE;
     w->io_manual_buf = 1;
     w->io = &wsp_io_file;
@@ -64,10 +73,14 @@ static int __wsp_io_close__file(
     wsp_error_t *e
 )
 {
-    if (w->io_fd != NULL) {
-        fclose(w->io_fd);
-        w->io_fd = NULL;
-    }
+    wsp_io_file_inst_t *self;
+    WSP_IO_CHECK(w, WSP_FILE, wsp_io_file_inst_t, self, e);
+
+    fclose(self->fd);
+
+    free(self);
+
+    w->io_instance = NULL;
 
     return WSP_OK;
 } // __wsp_io_close__file }}}
@@ -86,13 +99,18 @@ static int __wsp_io_read_into__file(
     wsp_error_t *e
 )
 {
-    if (ftell(w->io_fd) != offset) {
+    wsp_io_file_inst_t *self;
+    WSP_IO_CHECK(w, WSP_FILE, wsp_io_file_inst_t, self, e);
+
+    FILE* fd = self->fd;
+
+    if (ftell(fd) != offset) {
         e->type = WSP_ERROR_OFFSET;
         e->syserr = errno;
         return WSP_ERROR;
     }
 
-    if (fread(buf, size, 1, w->io_fd) != 1) {
+    if (fread(buf, size, 1, fd) != 1) {
         e->type = WSP_ERROR_IO;
         e->syserr = errno;
         return WSP_ERROR;
@@ -115,6 +133,11 @@ static int __wsp_io_read__file(
     wsp_error_t *e
 )
 {
+    wsp_io_file_inst_t *self;
+    WSP_IO_CHECK(w, WSP_FILE, wsp_io_file_inst_t, self, e);
+
+    FILE* fd = self->fd;
+
     void *tmp = malloc(size);
 
     if (tmp == NULL) {
@@ -123,14 +146,14 @@ static int __wsp_io_read__file(
         return WSP_ERROR;
     }
 
-    if (ftell(w->io_fd) != offset) {
+    if (ftell(fd) != offset) {
         free(tmp);
         e->type = WSP_ERROR_OFFSET;
         e->syserr = errno;
         return WSP_ERROR;
     }
 
-    if (fread(tmp, size, 1, w->io_fd) != 1) {
+    if (fread(tmp, size, 1, fd) != 1) {
         free(tmp);
         e->type = WSP_ERROR_IO;
         e->syserr = errno;
@@ -156,13 +179,18 @@ static int __wsp_io_write__file(
     wsp_error_t *e
 )
 {
-    if (fseek(w->io_fd, offset, SEEK_SET) == -1) {
+    wsp_io_file_inst_t *self;
+    WSP_IO_CHECK(w, WSP_FILE, wsp_io_file_inst_t, self, e);
+
+    FILE* fd = self->fd;
+
+    if (fseek(fd, offset, SEEK_SET) == -1) {
         e->type = WSP_ERROR_OFFSET;
         e->syserr = errno;
         return WSP_ERROR;
     }
 
-    if (fwrite(buf, size, 1, w->io_fd) != 1) {
+    if (fwrite(buf, size, 1, fd) != 1) {
         e->type = WSP_ERROR_IO;
         e->syserr = errno;
         return WSP_ERROR;

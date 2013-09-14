@@ -1,4 +1,5 @@
 // vim: foldmethod=marker
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -56,19 +57,30 @@ static int __wsp_io_open__mmap(
         return WSP_ERROR;
     }
 
-    void *tmp = mmap(NULL, st.st_size, mmap_prot, MAP_SHARED, fn, 0);
+    void *map = mmap(NULL, st.st_size, mmap_prot, MAP_SHARED, fn, 0);
 
-    if (tmp == MAP_FAILED) {
+    if (map == MAP_FAILED) {
         close(fn);
         e->type = WSP_ERROR_IO;
         e->syserr = errno;
         return WSP_ERROR;
     }
 
-    w->io_fd = NULL;
-    w->io_fn = fn;
-    w->io_mmap = tmp;
-    w->io_size = st.st_size;
+    wsp_io_mmap_inst_t *self = malloc(sizeof(wsp_io_mmap_inst_t));
+
+    if (self == NULL) {
+        close(fn);
+        munmap(map, st.st_size);
+        e->type = WSP_ERROR_MALLOC;
+        e->syserr = errno;
+        return WSP_ERROR;
+    }
+
+    self->map = map;
+    self->size = st.st_size;
+    self->fn = fn;
+
+    w->io_instance = self;
     w->io_mapping = WSP_MMAP;
     w->io_manual_buf = 0;
 
@@ -81,16 +93,15 @@ static int __wsp_io_close__mmap(
     wsp_error_t *e
 )
 {
-    if (w->io_fn != -1) {
-        close(w->io_fn);
-        w->io_fn = -1;
-    }
+    wsp_io_mmap_inst_t *self;
+    WSP_IO_CHECK(w, WSP_MEMORY, wsp_io_mmap_inst_t, self, e);
 
-    if (w->io_mmap != NULL) {
-        munmap(w->io_mmap, w->io_size);
-        w->io_mmap = NULL;
-    }
+    close(self->fn);
+    munmap(self->map, self->size);
 
+    free(self);
+
+    w->io_instance = NULL;
     return WSP_OK;
 } // __wsp_io_close__mmap }}}
 
@@ -101,15 +112,18 @@ static int __wsp_io_close__mmap(
  */
 // __wsp_io_read__mmap {{{
 static int __wsp_io_read__mmap(
-    wsp_t *file,
+    wsp_t *w,
     long offset,
     size_t size,
     void **buf,
     wsp_error_t *e
 )
 {
+    wsp_io_mmap_inst_t *self;
+    WSP_IO_CHECK(w, WSP_MMAP, wsp_io_mmap_inst_t, self, e);
+
     /* the beauty of mmaped files */
-    *buf = (char *)file->io_mmap + offset;
+    *buf = (char *)self->map + offset;
     return WSP_OK;
 } // __wsp_io_read__mmap }}}
 
@@ -120,14 +134,17 @@ static int __wsp_io_read__mmap(
  */
 // __wsp_io_read_into__mmap {{{
 static int __wsp_io_read_into__mmap(
-    wsp_t *file,
+    wsp_t *w,
     long offset,
     size_t size,
     void *buf,
     wsp_error_t *e
 )
 {
-    memcpy(buf, (char*)file->io_mmap + offset, size);
+    wsp_io_mmap_inst_t *self;
+    WSP_IO_CHECK(w, WSP_MMAP, wsp_io_mmap_inst_t, self, e);
+
+    memcpy(buf, (char*)self->map + offset, size);
     return WSP_OK;
 } // __wsp_read_into__mmap }}}
 
@@ -145,7 +162,10 @@ static int __wsp_io_write__mmap(
     wsp_error_t *e
 )
 {
-    memcpy((char *)w->io_mmap + offset, buf, size);
+    wsp_io_mmap_inst_t *self;
+    WSP_IO_CHECK(w, WSP_MMAP, wsp_io_mmap_inst_t, self, e);
+
+    memcpy((char *)self->map + offset, buf, size);
     return WSP_OK;
 } // __wsp_io_write__mmap }}}
 

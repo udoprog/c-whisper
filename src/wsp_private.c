@@ -10,6 +10,8 @@
 
 #include "wsp_io_file.h"
 #include "wsp_io_mmap.h"
+#include "wsp_io_memory.h"
+
 #include "wsp_debug.h"
 
 // inline parse & dump functions {{{
@@ -724,6 +726,10 @@ wsp_io *__wsp_get_io(wsp_mapping_t mapping)
 
     if (mapping == WSP_FILE) {
         return &wsp_io_file;
+    }
+
+    if (mapping == WSP_MEMORY) {
+        return &wsp_io_memory;
     }
 
     return NULL;

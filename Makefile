@@ -5,6 +5,8 @@ SOURCES+=src/wsp_private.c
 SOURCES+=src/wsp_time.c
 SOURCES+=src/wsp_io_file.c
 SOURCES+=src/wsp_io_mmap.c
+SOURCES+=src/wsp_io_memory.c
+SOURCES+=src/wsp_memfs.c
 
 BINARIES+=src/whisper-dump
 BINARIES+=src/whisper-create
@@ -17,7 +19,7 @@ WITH_PYTHON:="yes"
 
 CHECK_LIBS=$(shell pkg-config --libs check)
 
-TESTS+=tests/test_wsp_io_file.1.test
+TESTS+=tests/test_wsp_create.test
 
 CFLAGS=-pedantic -Wall -std=c99 -fPIC -D_POSIX_C_SOURCE=200112
 
@@ -30,7 +32,7 @@ endif
 
 OBJECTS+=$(SOURCES:.c=.o)
 
-all: $(ARCHIVE) $(BINARIES)
+all: $(ARCHIVE) $(BINARIES) tests
 	@if [[ $(WITH_PYTHON) != "yes" ]]; then\
 		echo "Not building python bindings";\
     else\
@@ -46,8 +48,8 @@ clean:
 $(ARCHIVE): $(OBJECTS)
 	$(AR) cr $@ $(OBJECTS)
 
-%.test: %.o
-	$(CC) $< $(CHECK_LIBS) -o $@
+%.test: %.o $(ARCHIVE)
+	$(CC) $< $(CHECK_LIBS) $(ARCHIVE) -o $@
 
 .PHONY: tests
 
