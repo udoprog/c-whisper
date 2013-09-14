@@ -8,3 +8,4 @@ src/whisper-create
 src/whisper-dump
 src/whisper-update
 *.wsp
+tags
