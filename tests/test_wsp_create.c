@@ -1,8 +1,9 @@
 #include <check.h>
 
 #include "../src/wsp.h"
-
 #include "../src/wsp_memfs.h"
+
+#include "check_utils.h"
 
 wsp_mapping_t m = WSP_MEMORY;
 wsp_aggregation_t a = WSP_AVERAGE;
@@ -22,6 +23,7 @@ START_TEST(test_empty_archive_1)
     );
 
     ck_assert_int_eq(WSP_ERROR_ARCHIVE, e.type);
+    wsp_ck_not_file("a2");
 }
 END_TEST
 
@@ -39,31 +41,48 @@ START_TEST(test_empty_archive_2)
     );
 
     ck_assert_int_eq(WSP_ERROR_ARCHIVE, e.type);
+    wsp_ck_not_file("a2");
 }
 END_TEST
 
 START_TEST(test_write_and_read_back)
 {
     wsp_archive_input_t archives[] = {
-        { .spp = 42, .count = 42 }
+        { .spp = 60, .count = 10 },
+        { .spp = 120, .count = 6 }
     };
+
+    size_t archive_count = sizeof(archives) / sizeof(wsp_archive_input_t);
 
     wsp_error_t e;
     WSP_ERROR_INIT(&e);
 
     ck_assert_int_eq(
-        WSP_OK, wsp_create("a3", archives, 1, a, xff, m, &e)
+        WSP_OK, wsp_create("a3", archives, archive_count, a, xff, m, &e)
     );
 
-    wsp_memfs_t *mf = wsp_memfs_find("a3");
+    wsp_ck_file_size("a3", archives, archive_count);
+}
+END_TEST
 
-    ck_assert(mf != NULL);
+START_TEST(test_decreasing_retention)
+{
+    wsp_archive_input_t archives[] = {
+        { .spp = 60, .count = 10 },
+        { .spp = 120, .count = 5 }
+    };
+
+    size_t archive_count = sizeof(archives) / sizeof(wsp_archive_input_t);
+
+    wsp_error_t e;
+    WSP_ERROR_INIT(&e);
+
     ck_assert_int_eq(
-        sizeof(wsp_metadata_b) +
-        sizeof(wsp_archive_b) +
-        sizeof(wsp_point_b) * 42,
-        mf->size
+        WSP_ERROR, wsp_create("a4", archives, archive_count, a, xff, m, &e)
     );
+
+    ck_assert_int_eq(WSP_ERROR_ARCHIVE, e.type);
+    wsp_ck_not_file("a4");
 }
 END_TEST
 
@@ -75,6 +94,7 @@ test_suite_main() {
     tcase_add_test(tc_core, test_empty_archive_1);
     tcase_add_test(tc_core, test_empty_archive_2);
     tcase_add_test(tc_core, test_write_and_read_back);
+    tcase_add_test(tc_core, test_decreasing_retention);
 
     suite_add_tcase(s, tc_core);
     return s;

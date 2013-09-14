@@ -121,7 +121,7 @@ wsp_return_t wsp_open(
 wsp_return_t wsp_create(
     const char *path,
     wsp_archive_input_t *archives,
-    size_t count,
+    size_t archive_count,
     wsp_aggregation_t aggregation,
     float x_files_factor,
     wsp_mapping_t mapping,
@@ -140,23 +140,18 @@ wsp_return_t wsp_create(
         return WSP_ERROR;
     }
 
-    off_t size = sizeof(wsp_metadata_b) + sizeof(wsp_archive_b) * count;
+    off_t size = sizeof(wsp_metadata_b) + sizeof(wsp_archive_b) * archive_count;
 
     uint32_t max_retention = 0;
 
-    wsp_metadata_t created_metadata = {
-        .aggregation = aggregation,
-        .max_retention = max_retention,
-        .x_files_factor = x_files_factor,
-        .archives_count = count
-    };
-
-    wsp_archive_t created_archives[count];
+    wsp_archive_t created_archives[archive_count];
+    wsp_archive_t *previous = NULL;
+    uint32_t previous_retention;
 
     uint32_t i;
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < archive_count; i++) {
         wsp_archive_input_t *input = archives + i;
-        wsp_archive_t *created = created_archives + i;
+        wsp_archive_t *current = created_archives + i;
 
         size_t points_size = sizeof(wsp_point_b) * input->count;
 
@@ -170,20 +165,55 @@ wsp_return_t wsp_create(
             return WSP_ERROR;
         }
 
-        created->offset = size;
-        created->spp = input->spp;
-        created->count = input->count;
-
         uint32_t retention = input->spp * input->count;
+
+        if (previous != NULL) {
+            uint32_t previous_retention = previous->spp * previous->count;
+
+            if (input->spp <= previous->spp) {
+                e->type = WSP_ERROR_ARCHIVE;
+                return WSP_ERROR;
+            }
+
+            if (input->spp % previous->spp != 0) {
+                e->type = WSP_ERROR_ARCHIVE;
+                return WSP_ERROR;
+            }
+
+            if (previous_retention >= retention) {
+                e->type = WSP_ERROR_ARCHIVE;
+                return WSP_ERROR;
+            }
+        }
+
+        current->offset = size;
+        current->spp = input->spp;
+        current->count = input->count;
 
         if (max_retention < retention) {
             max_retention = retention;
         }
 
         size += points_size;
+        previous = current;
+        previous_retention = retention;
     }
 
-    return io->create(path, size, created_archives, count, &created_metadata, e);
+    wsp_metadata_t created_metadata = {
+        .aggregation = aggregation,
+        .max_retention = max_retention,
+        .x_files_factor = x_files_factor,
+        .archives_count = archive_count
+    };
+
+    return io->create(
+        path,
+        size,
+        created_archives,
+        archive_count,
+        &created_metadata,
+        e
+    );
 }
 // wsp_create }}}
 

@@ -528,16 +528,16 @@ struct wsp_point_t {
  * file: The Whisper Database.
  * e: Error object.
  */
-#define WSP_IO_CHECK(file, io_type, var_type, self, e) do { \
-    if (file->io_instance == NULL) { \
-        e->type = WSP_ERROR_IO_MISSING; \
-        return WSP_ERROR; \
-    } \
-    if (file->io_mapping != io_type) { \
-        e->type = WSP_ERROR_IO_INVALID; \
-        return WSP_ERROR; \
-    } \
-    self = (var_type *)file->io_instance; \
+#define WSP_IO_CHECK(file, io_type, var_type, self, e) do {\
+    if (file->io_instance == NULL) {\
+        e->type = WSP_ERROR_IO_MISSING;\
+        return WSP_ERROR;\
+    }\
+    if (file->io_mapping != io_type) {\
+        e->type = WSP_ERROR_IO_INVALID;\
+        return WSP_ERROR;\
+    }\
+    self = (var_type *)file->io_instance;\
 } while(0)
 
 

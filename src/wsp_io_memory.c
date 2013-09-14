@@ -8,6 +8,8 @@
 #include "wsp_debug.h"
 #include "wsp_memfs.h"
 
+wsp_memfs_context_t memfs_ctx = WSP_MEMFS_CONTEXT_INIT;
+
 // __wsp_io_open__memory {{{
 static int __wsp_io_open__memory(
     wsp_t *w,
@@ -16,7 +18,7 @@ static int __wsp_io_open__memory(
     wsp_error_t *e
 )
 {
-    wsp_memfs_t *mf = wsp_memfs_find(path);
+    wsp_memfs_t *mf = wsp_memfs_find(&memfs_ctx, path);
 
     if (mf == NULL) {
         e->type = WSP_ERROR_IO;
@@ -163,7 +165,7 @@ wsp_return_t __wsp_io_create__memory(
     __wsp_dump_metadata(metadata, (void *)buf);
     __wsp_dump_archives(created_archives, count, (void *)(buf + archives_offset));
 
-    wsp_memfs_append(path, buf, size);
+    wsp_memfs_append(&memfs_ctx, path, buf, size);
 
     return WSP_OK;
 } // __wsp_io_create__memory }}}

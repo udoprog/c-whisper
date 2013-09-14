@@ -4,21 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct {
-    wsp_memfs_t *first;
-    wsp_memfs_t *last;
-} wsp_io_memory_context_t;
-
-wsp_io_memory_context_t context = {
-    .first = NULL,
-    .last = NULL
-};
-
 wsp_memfs_t *wsp_memfs_find(
+    wsp_memfs_context_t *ctx,
     const char *name
 )
 {
-    wsp_memfs_t *current = context.first;
+    wsp_memfs_t *current = ctx->first;
 
     while (current != NULL) {
         if (strncmp(current->name, name, sizeof(current->name)) == 0) {
@@ -32,12 +23,13 @@ wsp_memfs_t *wsp_memfs_find(
 }
 
 void wsp_memfs_append(
+    wsp_memfs_context_t *ctx,
     const char *name,
     void *memory,
     size_t size
 )
 {
-    wsp_memfs_t *mf = wsp_memfs_find(name);
+    wsp_memfs_t *mf = wsp_memfs_find(ctx, name);
 
     if (mf != NULL) {
         free(mf->memory);
@@ -47,19 +39,24 @@ void wsp_memfs_append(
         return;
     }
 
-    mf = wsp_memfs_new(name, memory, size);
+    mf = wsp_memfs_new(ctx, name, memory, size);
 
-    if (context.last == NULL) {
-        context.first = mf;
-        context.last = mf;
+    if (mf == NULL) {
         return;
     }
 
-    context.last->next = mf;
-    context.last = mf;
+    if (ctx->last == NULL) {
+        ctx->first = mf;
+        ctx->last = mf;
+        return;
+    }
+
+    ctx->last->next = mf;
+    ctx->last = mf;
 }
 
 wsp_memfs_t *wsp_memfs_new(
+    wsp_memfs_context_t *ctx,
     const char *name,
     void *memory,
     size_t size

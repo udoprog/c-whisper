@@ -48,8 +48,8 @@ clean:
 $(ARCHIVE): $(OBJECTS)
 	$(AR) cr $@ $(OBJECTS)
 
-%.test: %.o $(ARCHIVE)
-	$(CC) $< $(CHECK_LIBS) $(ARCHIVE) -o $@
+%.test: %.o tests/check_utils.o $(ARCHIVE)
+	$(CC) $< tests/check_utils.o $(CHECK_LIBS) $(ARCHIVE) -o $@
 
 .PHONY: tests
 
