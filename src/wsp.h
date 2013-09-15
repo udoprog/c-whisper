@@ -371,15 +371,26 @@ wsp_return_t wsp_close(
 );
 
 /**
- * Insert an update in the database.
- *
- * w: Whisper database.
- * p: Point to insert.
- * e: Error object.
+ * Same as wsp_update_now, but fetches the current timestamp from system.
  */
 wsp_return_t wsp_update(
     wsp_t *w,
     wsp_point_input_t *p,
+    wsp_error_t *e
+);
+
+/**
+ * Insert an update in the database.
+ *
+ * w: Whisper database.
+ * p: Point to insert.
+ * now: When 'now' is.
+ * e: Error object.
+ */
+wsp_return_t wsp_update_now(
+    wsp_t *w,
+    wsp_point_input_t *p,
+    wsp_time_t now,
     wsp_error_t *e
 );
 

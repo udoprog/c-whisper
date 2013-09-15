@@ -20,6 +20,7 @@ WITH_PYTHON:="yes"
 CHECK_LIBS=$(shell pkg-config --libs check)
 
 TESTS+=tests/test_wsp_create.test
+TESTS+=tests/test_wsp_update.test
 
 CFLAGS=-pedantic -Wall -std=c99 -fPIC -D_POSIX_C_SOURCE=200112
 

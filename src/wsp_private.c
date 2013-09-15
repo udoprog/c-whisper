@@ -127,7 +127,7 @@ static wsp_return_t __wsp_aggregate_average(
 
         double c = p->value;
 
-        if (c == NAN) {
+        if (isnan(c)) {
             continue;
         }
 
@@ -172,7 +172,7 @@ static wsp_return_t __wsp_aggregate_sum(
 
         double c = p->value;
 
-        if (c == NAN) {
+        if (isnan(c)) {
             continue;
         }
 
@@ -235,13 +235,13 @@ static wsp_return_t __wsp_aggregate_max(
 
         double c = p->value;
 
-        if (c == NAN) {
+        if (isnan(c)) {
             continue;
         }
 
         ++valid;
 
-        if (max != NAN && max >= c) {
+        if (!isnan(max) && max >= c) {
             continue;
         }
 
@@ -284,13 +284,13 @@ static wsp_return_t __wsp_aggregate_min(
 
         double c = p->value;
 
-        if (c == NAN) {
+        if (isnan(c)) {
             continue;
         }
 
         ++valid;
 
-        if (min != NAN && min <= c) {
+        if (!isnan(min) && min <= c) {
             continue;
         }
 

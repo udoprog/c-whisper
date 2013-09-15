@@ -221,7 +221,7 @@ static void
 Whisper_dealloc(C *self) {
     Py_XDECREF(self->py_meta);
     Py_XDECREF(self->py_archives);
-    printf("Dealloc\n");
+    //printf("Dealloc\n");
 }
 
 PyTypeObject Whisper_T = {

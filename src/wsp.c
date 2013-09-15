@@ -93,6 +93,7 @@ wsp_return_t wsp_open(
     }
 
     w->io = io;
+    w->io_mapping = mapping;
 
     if (w->io->open(w, path, flags, e) == WSP_ERROR) {
         return WSP_ERROR;
@@ -399,7 +400,11 @@ wsp_return_t wsp_write_points(
 
     uint32_t write_index = 0;
 
-    /* this not is the first point being written */
+    /* 
+     * this not is the first point being written
+     * This has the unfortunate circumstance that floored timestamps = 0 are
+     * not valid.
+     */
     if (base_point.timestamp != 0) {
         write_index = wsp_point_index(archive, &base_point, points[0].timestamp);
     }
@@ -429,10 +434,19 @@ wsp_return_t wsp_aggregate_value(
     uint32_t prev_index = wsp_point_index(prev, prev_base, floor);
     uint32_t prev_count = cur->spp / prev->spp;
 
+    if (DEBUG) {
+        DEBUG_PRINTF("timestamp=%u", timestamp);
+        DEBUG_PRINTF("cur: spp=%u", cur->spp);
+        DEBUG_PRINTF("prev: spp=%u", prev->spp);
+        DEBUG_PRINTF("floor=%u", floor);
+        DEBUG_PRINTF("prev_index=%u", prev_index);
+        DEBUG_PRINTF("prev_points=%u", prev_count);
+    }
+
     wsp_point_t prev_points[prev_count];
 
     // Load array of points from the previous archive of points.
-    if (wsp_load_points(w, prev, prev_index, prev_count, prev_points, e) == WSP_ERROR) {
+    if (wsp_fetch_points(w, prev, prev_index, prev_count, prev_points, e) == WSP_ERROR) {
         return WSP_ERROR;
     }
 
@@ -443,9 +457,10 @@ wsp_return_t wsp_aggregate_value(
     }
 
     *result = value;
+
+    return WSP_OK;
 } // wsp_aggregate_value }}}
 
-// wsp_update {{{
 wsp_return_t wsp_update(
     wsp_t *w,
     wsp_point_input_t *point,
@@ -453,13 +468,19 @@ wsp_return_t wsp_update(
 )
 {
     wsp_time_t now = wsp_time_now();
+    return wsp_update_now(w, point, now, e);
+}
 
+// wsp_update {{{
+wsp_return_t wsp_update_now(
+    wsp_t *w,
+    wsp_point_input_t *point,
+    wsp_time_t now,
+    wsp_error_t *e
+)
+{
     wsp_time_t timestamp = point->timestamp;
     wsp_value_t value = point->value;
-
-    if (timestamp == 0) {
-        timestamp = now;
-    }
 
     if (timestamp > now) {
         e->type = WSP_ERROR_FUTURE_TIMESTAMP;
@@ -496,7 +517,10 @@ wsp_return_t wsp_update(
         }
 
         wsp_point_t write_points[] = {
-            { .timestamp = timestamp, .value = value }
+            {
+                .timestamp = wsp_time_floor(timestamp, cur->spp),
+                .value = value
+            }
         };
 
         if (wsp_write_points(w, cur, write_points, 1, &prev_base, e) == WSP_ERROR) {
