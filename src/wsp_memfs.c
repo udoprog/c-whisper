@@ -22,6 +22,22 @@ wsp_memfs_t *wsp_memfs_find(
     return NULL;
 }
 
+wsp_memfs_t *wsp_memfs_clear(
+    wsp_memfs_context_t *ctx
+)
+{
+    wsp_memfs_t *current = ctx->first;
+
+    while (current != NULL) {
+        free(current->memory);
+        current = current->next;
+    }
+
+    ctx->first = NULL;
+    ctx->last = NULL;
+    return NULL;
+}
+
 void wsp_memfs_append(
     wsp_memfs_context_t *ctx,
     const char *name,

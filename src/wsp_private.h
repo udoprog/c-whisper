@@ -49,11 +49,12 @@ wsp_return_t __wsp_find_highest_precision(
     wsp_error_t *e
 );
 
-wsp_return_t __wsp_save_point(
+wsp_return_t __wsp_save_points(
     wsp_t *w,
     wsp_archive_t *archive,
     long index,
-    wsp_point_t *point,
+    wsp_point_t *points,
+    size_t length,
     wsp_error_t *e
 );
 
@@ -124,6 +125,14 @@ void __wsp_dump_archives(
     wsp_archive_t *archives,
     uint32_t count,
     wsp_archive_b *buf
+);
+
+void __wsp_build_point(
+    wsp_t *w,
+    wsp_archive_t *archive,
+    wsp_time_t time,
+    wsp_value_t value,
+    wsp_point_t *result
 );
 
 #endif /* _WSP_PRIVATE_H_ */

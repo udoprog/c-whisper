@@ -23,6 +23,10 @@ typedef struct wsp_memfs_context_s {
     .last = NULL \
 }
 
+wsp_memfs_t *wsp_memfs_clear(
+    wsp_memfs_context_t *ctx
+);
+
 wsp_memfs_t *wsp_memfs_find(
     wsp_memfs_context_t *ctx,
     const char *name

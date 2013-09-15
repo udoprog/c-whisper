@@ -383,12 +383,28 @@ wsp_return_t wsp_update(
     wsp_error_t *e
 );
 
-wsp_return_t wsp_update_point(
+wsp_return_t wsp_update_many(
+    wsp_t *w,
+    wsp_point_input_t *p,
+    size_t length,
+    wsp_error_t *e
+);
+
+wsp_return_t wsp_write_points(
+    wsp_t *w,
+    wsp_archive_t *archive,
+    wsp_point_t *points,
+    size_t length,
+    wsp_point_t *base,
+    wsp_error_t *e
+);
+
+wsp_return_t wsp_build_point(
     wsp_t *w,
     wsp_archive_t *archive,
     wsp_time_t timestamp,
     wsp_value_t value,
-    wsp_point_t *base,
+    wsp_point_t *result,
     wsp_error_t *e
 );
 

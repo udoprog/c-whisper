@@ -572,33 +572,68 @@ wsp_return_t __wsp_find_highest_precision(
     return WSP_OK;
 } // __wsp_find_highest_precision }}}
 
-// __wsp_save_point {{{
-wsp_return_t __wsp_save_point(
+// __wsp_write_segment {{{
+inline static wsp_return_t __wsp_write_segment(
     wsp_t *w,
     wsp_archive_t *archive,
-    long index,
-    wsp_point_t *point,
+    wsp_point_t *points,
+    size_t length,
+    size_t position,
     wsp_error_t *e
 )
 {
-    wsp_point_b buf;
+    wsp_point_b buf[length];
 
-    if (index >= archive->count) {
-        e->type = WSP_ERROR_POINT_OOB;
-        return WSP_ERROR;
-    }
+    size_t write_offset = WSP_POINT_OFFSET(archive, position);
+    size_t write_size = sizeof(wsp_point_b) * length;
 
-    size_t write_offset = WSP_POINT_OFFSET(archive, index);
-    size_t write_size = sizeof(wsp_point_b);
+    __wsp_dump_points(points, length, buf);
 
-    __wsp_dump_point(point, &buf);
-
-    if (w->io->write(w, write_offset, write_size, (void *)&buf, e) == WSP_ERROR) {
+    if (w->io->write(w, write_offset, write_size, (void *)buf, e) == WSP_ERROR) {
         return WSP_ERROR;
     }
 
     return WSP_OK;
-} // __wsp_save_point }}}
+}
+// __wsp_write_segment }}}
+
+// __wsp_save_points {{{
+wsp_return_t __wsp_save_points(
+    wsp_t *w,
+    wsp_archive_t *archive,
+    long offset,
+    wsp_point_t *points,
+    size_t length,
+    wsp_error_t *e
+)
+{
+    if (length >= archive->count) {
+        e->type = WSP_ERROR_POINT_OOB;
+        return WSP_ERROR;
+    }
+
+    // One write.
+    if (offset + length <= archive->count) {
+        if (__wsp_write_segment(w, archive, points, length, offset, e) == WSP_ERROR) {
+            return WSP_ERROR;
+        }
+    }
+    // Two writes.
+    else {
+        size_t write_length_a = archive->count - offset;
+        size_t write_length_b = archive->count - write_length_a;
+
+        if (__wsp_write_segment(w, archive, points, write_length_a, offset, e) == WSP_ERROR) {
+            return WSP_ERROR;
+        }
+
+        if (__wsp_write_segment(w, archive, points + write_length_a, write_length_b, 0, e) == WSP_ERROR) {
+            return WSP_ERROR;
+        }
+    }
+
+    return WSP_OK;
+} // __wsp_save_points }}}
 
 // __wsp_load_point {{{
 wsp_return_t __wsp_load_point(
@@ -736,3 +771,16 @@ wsp_io *__wsp_get_io(wsp_mapping_t mapping)
 }
 // __wsp_get_io }}}
 
+// __wsp_build_point {{{
+void __wsp_build_point(
+    wsp_t *w,
+    wsp_archive_t *archive,
+    wsp_time_t time,
+    wsp_value_t value,
+    wsp_point_t *result
+)
+{
+    result->timestamp = wsp_time_floor(time, archive->spp);
+    result->value = value;
+}
+// __wsp_build_point }}}
