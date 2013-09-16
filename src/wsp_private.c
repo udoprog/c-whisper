@@ -768,8 +768,7 @@ wsp_io *__wsp_get_io(wsp_mapping_t mapping)
     }
 
     return NULL;
-}
-// __wsp_get_io }}}
+} // __wsp_get_io }}}
 
 // __wsp_build_point {{{
 void __wsp_build_point(
@@ -782,5 +781,4 @@ void __wsp_build_point(
 {
     result->timestamp = wsp_time_floor(time, archive->spp);
     result->value = value;
-}
-// __wsp_build_point }}}
+} // __wsp_build_point }}}

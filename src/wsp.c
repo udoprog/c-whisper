@@ -461,6 +461,7 @@ wsp_return_t wsp_aggregate_value(
     return WSP_OK;
 } // wsp_aggregate_value }}}
 
+// wsp_update {{{
 wsp_return_t wsp_update(
     wsp_t *w,
     wsp_point_input_t *point,
@@ -469,7 +470,7 @@ wsp_return_t wsp_update(
 {
     wsp_time_t now = wsp_time_now();
     return wsp_update_now(w, point, now, e);
-}
+} // wsp_update }}}
 
 // wsp_update {{{
 wsp_return_t wsp_update_now(
@@ -626,6 +627,7 @@ wsp_return_t wsp_parse_archive_input(
     return WSP_OK;
 } // wsp_parse_archive_input }}}
 
+// wsp_parse_point_input {{{
 wsp_return_t wsp_parse_point_input(
     const char *string,
     wsp_point_input_t *point
@@ -665,4 +667,4 @@ wsp_return_t wsp_parse_point_input(
     point->value = value;
 
     return WSP_OK;
-}
+} // wsp_parse_point_input }}}
