@@ -35,6 +35,7 @@ PyMODINIT_FUNC initwsp(void) {
 
     PyModule_AddIntConstant(m, "MMAP", WSP_MMAP);
     PyModule_AddIntConstant(m, "FILE", WSP_FILE);
+    PyModule_AddIntConstant(m, "MEMORY", WSP_MEMORY);
 
     PyModule_AddIntConstant(m, "AVERAGE", WSP_AVERAGE);
     PyModule_AddIntConstant(m, "SUM", WSP_SUM);

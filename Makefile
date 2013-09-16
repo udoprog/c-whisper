@@ -25,7 +25,7 @@ TESTS+=tests/test_wsp_update.test
 CFLAGS=-pedantic -Wall -std=c99 -fPIC -D_POSIX_C_SOURCE=200112
 
 ifeq ($(WITH_DEBUG), "yes")
-CFLAGS+=-g -DWSP_DEBUG
+CFLAGS+=-g3 -DWSP_DEBUG
 SOURCES+=src/wsp_debug.c
 else
 CFLAGS+=-O3

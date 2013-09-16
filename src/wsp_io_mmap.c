@@ -94,7 +94,7 @@ static int __wsp_io_close__mmap(
 )
 {
     wsp_io_mmap_inst_t *self;
-    WSP_IO_CHECK(w, WSP_MEMORY, wsp_io_mmap_inst_t, self, e);
+    WSP_IO_CHECK(w, WSP_MMAP, wsp_io_mmap_inst_t, self, e);
 
     close(self->fn);
     munmap(self->map, self->size);

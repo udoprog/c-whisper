@@ -240,6 +240,8 @@ wsp_return_t wsp_close(wsp_t *w, wsp_error_t *e)
         return WSP_ERROR;
     }
 
+    w->io = NULL;
+    w->io_instance = NULL;
     w->archives = NULL;
     w->archives_size = 0;
     w->meta.aggregation = 0l;
