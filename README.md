@@ -5,9 +5,9 @@ A C implementation of the whisper database format.
 https://github.com/graphite-project/whisper
 
 **Disclaimer:**
-I'm currently a noob at writing python extensions and might have gotten ref
-counting wrong on some occasions.
-Feel free to proof check the code if you know more than me!
+I'm currently a beginner at pythons c-api and might have gotten ref counting
+wrong.
+If you know pythons c-api feel free to proof check the code under src/python.
 
 Introduction
 ============
@@ -16,16 +16,22 @@ I started prototyping this library with the 'whisper-dump' program found in the
 python library.
 When comparing them head to head I often found that my naive C implementation
 performed far better in both utilizing the CPU and read/write performance.
-That caused me to set out and write this, I wanted to maximize performance in
-my graphite installations to boost performance.
+That caused me to set out and write this. I want to maximize performance in
+my graphite installation to scale a bit more vertically.
 
-I am not attempting to be API compatible with the current python implementation 
-since frankly; it's a mess.
-Instead I am digging new ground and implementing a new API which supports the
-same functionality as the original, but it will require a refactor of the
-storage backend to be useful.
-It also features a very clean C api, so writing your own applications outside
-of python should be possible.
+I am not attempting to be 100% API compatible with the current python
+implementation since the complete api is a bit all over the place.
+I do however aim at support the basic operations.
+
+So far these include:
+
+* *open* (wsp_open)
+* *create* (wsp_create)
+* *update* (wsp_update)
+* *update\_many* (wsp_update_many)
+
+It currently features a very clean C api, writing your own applications outside
+of python is possible and encouraged.
 
 Requirements
 ============
