@@ -367,6 +367,20 @@ wsp_return_t wsp_update(
 );
 
 /**
+ * Same as wsp_update but operates on an array of data.
+ *
+ * Internally invokes wsp_update_now in the same manner.
+ * This function is _not_ atomic, updates will succeed in a linear fashion and
+ * break whenever a single failure is encountered.
+ */
+wsp_return_t wsp_update_many(
+    wsp_t *w,
+    wsp_point_input_t *points,
+    size_t length,
+    wsp_error_t *e
+);
+
+/**
  * Insert an update in the database.
  *
  * w: Whisper database.

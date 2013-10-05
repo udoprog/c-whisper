@@ -474,6 +474,27 @@ wsp_return_t wsp_update(
     return wsp_update_now(w, point, now, e);
 } // wsp_update }}}
 
+// wsp_update_many {{{
+wsp_return_t wsp_update_many(
+    wsp_t *w,
+    wsp_point_input_t *points,
+    size_t length,
+    wsp_error_t *e
+)
+{
+    wsp_time_t now = wsp_time_now();
+    size_t i;
+    for (i = 0; i < length; i++) {
+        wsp_point_input_t *point = points + i;
+
+        if (wsp_update_now(w, point, now, e) == WSP_ERROR) {
+            return WSP_ERROR;
+        }
+    }
+
+    return WSP_OK;
+} // wsp_update_many }}}
+
 // wsp_update {{{
 wsp_return_t wsp_update_now(
     wsp_t *w,

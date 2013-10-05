@@ -3,7 +3,8 @@
 
 typedef Whisper C;
 
-static PyObject* Whisper_open(C *self, PyObject *args) {
+static PyObject* Whisper_open(C *self, PyObject *args)
+{
     char *path;
     wsp_t *base = NULL;
     PyObject *py_meta = NULL;
@@ -101,7 +102,19 @@ error:
     return NULL;
 }
 
-static PyObject* Whisper_load_points(C *self, PyObject *args) {
+static PyObject* Whisper_create(C *self, PyObject *args)
+{
+    char *path;
+
+    if (!PyArg_ParseTuple(args, "s", &path)) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject* Whisper_load_points(C *self, PyObject *args)
+{
     PyObject *p_archive;
 
     if (!PyArg_ParseTuple(args, "O", &p_archive)) {
@@ -160,7 +173,8 @@ static PyObject* Whisper_load_points(C *self, PyObject *args) {
     return result;
 }
 
-static PyObject* Whisper_update_point(C *self, PyObject *args) {
+static PyObject* Whisper_update_point(C *self, PyObject *args)
+{
     unsigned int i_timestamp;
     double value;
 
@@ -191,10 +205,66 @@ static PyObject* Whisper_update_point(C *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
+static PyObject* Whisper_update_points(C *self, PyObject *args)
+{
+    PyObject *iterator;
+    PyObject *item;
+    PyObject *list;
+    unsigned int timestamp;
+    double value;
+
+    if (!PyArg_ParseTuple(args, "O", &list)) {
+        return NULL;
+    }
+
+    if (!(iterator = PyObject_GetIter(list))) {
+        return NULL;
+    }
+
+    Py_ssize_t list_size = PySequence_Size(list);
+    int i = 0;
+
+    wsp_point_input_t inputs[list_size];
+
+    while ((item = PyIter_Next(iterator))) {
+        if (!PyArg_ParseTuple(item, "Id", &timestamp, &value)) {
+            return NULL;
+        }
+
+        inputs[i].timestamp = timestamp;
+        inputs[i].value = value;
+
+        Py_DECREF(item);
+    }
+
+    Py_DECREF(iterator);
+
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    if (self->base == NULL) {
+        PyErr_SetString(PyExc_Exception, "Base not initialized");
+        return NULL;
+    }
+
+    wsp_error_t e;
+    WSP_ERROR_INIT(&e);
+
+    if (wsp_update_many(self->base, inputs, list_size, &e) == WSP_ERROR) {
+        PyErr_Whisper(&e);
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef Whisper_methods[] = {
     {"open", (PyCFunction)Whisper_open, METH_VARARGS, "Open the specified path"},
+    {"create", (PyCFunction)Whisper_create, METH_VARARGS, "Create an archive at the specified path"},
     {"load_points", (PyCFunction)Whisper_load_points, METH_VARARGS, "Load points"},
     {"update_point", (PyCFunction)Whisper_update_point, METH_VARARGS, "Update point"},
+    {"update_points", (PyCFunction)Whisper_update_points, METH_VARARGS, "Update points"},
     {NULL}
 };
 
