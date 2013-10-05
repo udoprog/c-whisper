@@ -4,6 +4,7 @@
 
 #include "../src/wsp.h"
 #include "../src/wsp_io_memory.h"
+#include "../src/wsp_buffer.h"
 
 /*
  * Check that a specific file does not exist.

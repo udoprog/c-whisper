@@ -44,11 +44,8 @@
 
 struct wsp_error_t;
 struct wsp_t;
-struct wsp_point_b;
 struct wsp_point_t;
-struct wsp_archive_b;
 struct wsp_archive_t;
-struct wsp_metadata_b;
 struct wsp_metadata_t;
 
 typedef enum {
@@ -110,13 +107,10 @@ typedef enum {
 
 typedef struct wsp_error_t wsp_error_t;
 typedef struct wsp_t wsp_t;
-typedef struct wsp_point_b wsp_point_b;
 typedef struct wsp_point_t wsp_point_t;
-typedef struct wsp_archive_b wsp_archive_b;
 typedef struct wsp_archive_t wsp_archive_t;
 typedef struct wsp_archive_input_t wsp_archive_input_t;
 typedef struct wsp_point_input_t wsp_point_input_t;
-typedef struct wsp_metadata_b wsp_metadata_b;
 typedef struct wsp_metadata_t wsp_metadata_t;
 
 typedef double wsp_value_t;
@@ -255,13 +249,6 @@ typedef wsp_return_t(*wsp_aggregate_f)(
     int *skip,
     wsp_error_t *e
 );
-
-struct wsp_metadata_b {
-    char aggregation[sizeof(uint32_t)];
-    char max_retention[sizeof(uint32_t)];
-    char x_files_factor[sizeof(float)];
-    char archives_count[sizeof(uint32_t)];
-};
 
 struct wsp_metadata_t {
     wsp_aggregation_t aggregation;
@@ -419,12 +406,6 @@ wsp_return_t wsp_build_point(
     wsp_error_t *e
 );
 
-struct wsp_archive_b {
-    char offset[sizeof(uint32_t)];
-    char spp[sizeof(uint32_t)];
-    char count[sizeof(uint32_t)];
-};
-
 struct wsp_archive_t {
     // absolute offset of archive in database.
     uint32_t offset;
@@ -525,31 +506,23 @@ wsp_return_t wsp_parse_point_input(
     wsp_point_input_t *point
 );
 
-struct wsp_point_b {
-    char timestamp[sizeof(uint32_t)];
-    char value[sizeof(wsp_value_t)];
-};
-
+/**
+ * Structure to contain a single point read from an archive.
+ */
 struct wsp_point_t {
     wsp_time_t timestamp;
     wsp_value_t value;
 };
 
+/**
+ * Macro to initialize a single wsp_point_t.
+ */
 #define WSP_POINT_INIT(p) do { \
     (p)->timestamp = 0; \
     (p)->value = 0; \
 } while(0)
 
-/*
- * Calculate the absolute offset for a specific point in the database.
- */
-#define WSP_POINT_OFFSET(archive, index) \
-    ((archive)->offset + sizeof(wsp_point_b) * index)
-
-#define WSP_ARCHIVE_OFFSET(index) \
-    (sizeof(wsp_metadata_b) + sizeof(wsp_archive_b) * index)
-
-/*
+/**
  * Check that the io instance is of the expected type and assign it to self.
  *
  * file: The Whisper Database.

@@ -2,6 +2,7 @@ ARCHIVE=wsp.a
 
 SOURCES+=src/wsp.c
 SOURCES+=src/wsp_private.c
+SOURCES+=src/wsp_buffer.c
 SOURCES+=src/wsp_time.c
 SOURCES+=src/wsp_io_file.c
 SOURCES+=src/wsp_io_mmap.c
